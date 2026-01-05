@@ -3,16 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPTV Player</title>
+<title>Omar's IPTV</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-  h1 { text-align: center; color: #00ccff; }
-  #container { display: flex; flex-direction: column; align-items: center; }
-  #player { width: 100%; max-width: 800px; margin: 20px 0; }
-  #channelList { list-style: none; padding: 0; width: 100%; max-width: 800px; }
-  #channelList li { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; transition: background 0.2s; }
-  #channelList li:hover { background: #222; }
-  a { color: inherit; text-decoration: none; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #00ccff;
+  }
+  #container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #player {
+    width: 100%;
+    max-width: 800px;
+    margin: 20px 0;
+  }
+  #search {
+    width: 100%;
+    max-width: 800px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: #1e1e1e;
+    color: #fff;
+  }
+  #channelList {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+    max-width: 800px;
+  }
+  #channelList li {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #channelList li:hover {
+    background: #222;
+  }
 </style>
 </head>
 <body>
@@ -21,50 +60,78 @@
 
 <div id="container">
   <video id="player" controls autoplay></video>
+
+  <!-- Search bar -->
+  <input
+    type="text"
+    id="search"
+    placeholder="Search channels..."
+  >
+
   <ul id="channelList"></ul>
 </div>
 
 <script>
-const playlistURL = "playlist.m3u"; // <-- replace with your M3U/M3U8 path or URL
+const playlistURL = "playlist.m3u"; // replace with your M3U/M3U8 URL
 
-// Detect device (optional for styling)
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const channelList = document.getElementById("channelList");
+const player = document.getElementById("player");
+const searchInput = document.getElementById("search");
+
+let channels = [];
 
 // Fetch and parse M3U
 fetch(playlistURL)
   .then(res => res.text())
   .then(text => {
     const lines = text.split(/\r?\n/);
-    const channelList = document.getElementById("channelList");
-    const player = document.getElementById("player");
-
     let currentName = "";
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       if (line.startsWith("#EXTINF:")) {
-        // Grab channel name after comma
         const nameIndex = line.indexOf(",") + 1;
         currentName = line.substring(nameIndex).trim() || "Unnamed Channel";
       } else if (!line.startsWith("#")) {
-        // This is the URL
-        const li = document.createElement("li");
-        li.textContent = currentName;
-        li.dataset.url = line;
-        li.addEventListener("click", () => {
-          player.src = line;
-          player.play();
+        channels.push({
+          name: currentName,
+          url: line
         });
-        channelList.appendChild(li);
         currentName = "";
       }
     }
+
+    renderChannels(channels);
   })
   .catch(err => {
     console.error("Failed to load playlist:", err);
     alert("Failed to load playlist. Check your M3U path or URL.");
   });
+
+// Render channel list
+function renderChannels(list) {
+  channelList.innerHTML = "";
+  list.forEach(ch => {
+    const li = document.createElement("li");
+    li.textContent = ch.name;
+    li.addEventListener("click", () => {
+      player.src = ch.url;
+      player.play();
+    });
+    channelList.appendChild(li);
+  });
+}
+
+// Search filter
+searchInput.addEventListener("input", () => {
+  const query = searchInput.value.toLowerCase();
+  const filtered = channels.filter(ch =>
+    ch.name.toLowerCase().includes(query)
+  );
+  renderChannels(filtered);
+});
 </script>
 
 </body>
