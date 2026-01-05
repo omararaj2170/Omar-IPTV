@@ -6,19 +6,18 @@
 <title>IPTV Loader</title>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-  h1 { color: #333; }
-  ul { list-style-type: none; padding: 0; }
+  h1 { color: #333; text-align: center; }
+  h2 { color: #555; margin-top: 30px; }
+  ul { list-style: none; padding: 0; }
   li { padding: 5px 0; }
   a { text-decoration: none; color: #0077cc; }
-  /* Hide both versions by default */
+  a:hover { text-decoration: underline; }
   #pcView, #mobileView { display: none; }
 </style>
 </head>
 <body>
 
 <h1>IPTV Playlist</h1>
-
-<input type="file" id="m3uFile" accept=".m3u,.m3u8">
 
 <!-- PC version -->
 <div id="pcView">
@@ -35,8 +34,6 @@
 <script>
   // Detect device
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-  // Show the correct view
   const pcView = document.getElementById("pcView");
   const mobileView = document.getElementById("mobileView");
 
@@ -46,23 +43,16 @@
     pcView.style.display = "block";
   }
 
-  // File reading
-  const fileInput = document.getElementById("m3uFile");
-  const pcList = document.getElementById("pcList");
-  const mobileList = document.getElementById("mobileList");
+  // Your M3U playlist URL (can also be local file like "playlist.m3u")
+  const playlistURL = "playlist.m3u"; // <-- replace this with your M3U URL or local path
 
-  fileInput.addEventListener("change", function() {
-    const file = this.files[0];
-    if(!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result;
+  // Load and parse M3U
+  fetch(playlistURL)
+    .then(response => response.text())
+    .then(text => {
       const lines = text.split(/\r?\n/);
-
-      // Clear previous lists
-      pcList.innerHTML = "";
-      mobileList.innerHTML = "";
+      const pcList = document.getElementById("pcList");
+      const mobileList = document.getElementById("mobileList");
 
       for(let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -74,16 +64,19 @@
           a.textContent = line;
 
           li.appendChild(a);
-
-          // Append to both lists, so each version has its own
           pcList.appendChild(li.cloneNode(true));
           mobileList.appendChild(li.cloneNode(true));
         }
       }
-    };
-    reader.readAsText(file);
-  });
+    })
+    .catch(err => {
+      console.error("Failed to load playlist:", err);
+      const msg = document.createElement("p");
+      msg.textContent = "Failed to load playlist. Make sure the URL/path is correct.";
+      document.body.appendChild(msg);
+    });
 </script>
 
 </body>
 </html>
+
