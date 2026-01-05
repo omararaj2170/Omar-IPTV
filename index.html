@@ -3,80 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPTV Loader</title>
+<title>IPTV Player</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-  h1 { color: #333; text-align: center; }
-  h2 { color: #555; margin-top: 30px; }
-  ul { list-style: none; padding: 0; }
-  li { padding: 5px 0; }
-  a { text-decoration: none; color: #0077cc; }
-  a:hover { text-decoration: underline; }
-  #pcView, #mobileView { display: none; }
+  body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
+  h1 { text-align: center; color: #00ccff; }
+  #container { display: flex; flex-direction: column; align-items: center; }
+  #player { width: 100%; max-width: 800px; margin: 20px 0; }
+  #channelList { list-style: none; padding: 0; width: 100%; max-width: 800px; }
+  #channelList li { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; transition: background 0.2s; }
+  #channelList li:hover { background: #222; }
+  a { color: inherit; text-decoration: none; }
 </style>
 </head>
 <body>
 
-<h1>IPTV Playlist</h1>
+<h1>IPTV Player</h1>
 
-<!-- PC version -->
-<div id="pcView">
-  <h2>PC Version</h2>
-  <ul id="pcList"></ul>
-</div>
-
-<!-- Mobile version -->
-<div id="mobileView">
-  <h2>Mobile Version</h2>
-  <ul id="mobileList"></ul>
+<div id="container">
+  <video id="player" controls autoplay></video>
+  <ul id="channelList"></ul>
 </div>
 
 <script>
-  // Detect device
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const pcView = document.getElementById("pcView");
-  const mobileView = document.getElementById("mobileView");
+const playlistURL = "playlist.m3u"; // <-- replace with your M3U/M3U8 path or URL
 
-  if(isMobile) {
-    mobileView.style.display = "block";
-  } else {
-    pcView.style.display = "block";
-  }
+// Detect device (optional for styling)
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  // Your M3U playlist URL (can also be local file like "playlist.m3u")
-  const playlistURL = "playlist.m3u"; // <-- replace this with your M3U URL or local path
+// Fetch and parse M3U
+fetch(playlistURL)
+  .then(res => res.text())
+  .then(text => {
+    const lines = text.split(/\r?\n/);
+    const channelList = document.getElementById("channelList");
+    const player = document.getElementById("player");
 
-  // Load and parse M3U
-  fetch(playlistURL)
-    .then(response => response.text())
-    .then(text => {
-      const lines = text.split(/\r?\n/);
-      const pcList = document.getElementById("pcList");
-      const mobileList = document.getElementById("mobileList");
+    let currentName = "";
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
 
-      for(let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if(line && !line.startsWith("#")) {
-          const li = document.createElement("li");
-          const a = document.createElement("a");
-          a.href = line;
-          a.target = "_blank";
-          a.textContent = line;
-
-          li.appendChild(a);
-          pcList.appendChild(li.cloneNode(true));
-          mobileList.appendChild(li.cloneNode(true));
-        }
+      if (line.startsWith("#EXTINF:")) {
+        // Grab channel name after comma
+        const nameIndex = line.indexOf(",") + 1;
+        currentName = line.substring(nameIndex).trim() || "Unnamed Channel";
+      } else if (!line.startsWith("#")) {
+        // This is the URL
+        const li = document.createElement("li");
+        li.textContent = currentName;
+        li.dataset.url = line;
+        li.addEventListener("click", () => {
+          player.src = line;
+          player.play();
+        });
+        channelList.appendChild(li);
+        currentName = "";
       }
-    })
-    .catch(err => {
-      console.error("Failed to load playlist:", err);
-      const msg = document.createElement("p");
-      msg.textContent = "Failed to load playlist. Make sure the URL/path is correct.";
-      document.body.appendChild(msg);
-    });
+    }
+  })
+  .catch(err => {
+    console.error("Failed to load playlist:", err);
+    alert("Failed to load playlist. Check your M3U path or URL.");
+  });
 </script>
 
 </body>
 </html>
-
