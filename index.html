@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Omar's IPTV</title>
+
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -11,20 +12,25 @@
     color: #eee;
     padding: 20px;
   }
+
   h1 {
     text-align: center;
     color: #00ccff;
   }
+
   #container {
     display: flex;
     flex-direction: column;
     align-items: center;
   }
+
   #player {
     width: 100%;
     max-width: 800px;
     margin: 20px 0;
+    background: black;
   }
+
   #search {
     width: 100%;
     max-width: 800px;
@@ -32,36 +38,54 @@
     margin-bottom: 10px;
     border-radius: 6px;
     border: none;
-    outline: none;
     font-size: 16px;
     background: #1e1e1e;
     color: #fff;
   }
+
   #channelList {
     list-style: none;
     padding: 0;
     width: 100%;
     max-width: 800px;
   }
+
   #channelList li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 10px;
     border-bottom: 1px solid #333;
     cursor: pointer;
     transition: background 0.2s;
   }
+
   #channelList li:hover {
     background: #222;
   }
+
+  .logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background: #000;
+    border-radius: 6px;
+  }
+
+  .channel-name {
+    font-size: 16px;
+    flex: 1;
+  }
 </style>
 </head>
+
 <body>
 
-<h1>IPTV Player</h1>
+<h1>📺 Omar's IPTV</h1>
 
 <div id="container">
   <video id="player" controls autoplay></video>
 
-  <!-- Search bar -->
   <input
     type="text"
     id="search"
@@ -72,7 +96,7 @@
 </div>
 
 <script>
-const playlistURL = "playlist.m3u"; // replace with your M3U/M3U8 URL
+const playlistURL = "playlist.m3u"; // your M3U path
 
 const channelList = document.getElementById("channelList");
 const player = document.getElementById("player");
@@ -80,57 +104,76 @@ const searchInput = document.getElementById("search");
 
 let channels = [];
 
-// Fetch and parse M3U
+// Load & parse M3U
 fetch(playlistURL)
   .then(res => res.text())
   .then(text => {
     const lines = text.split(/\r?\n/);
-    let currentName = "";
+    let current = {};
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    for (let line of lines) {
+      line = line.trim();
       if (!line) continue;
 
-      if (line.startsWith("#EXTINF:")) {
-        const nameIndex = line.indexOf(",") + 1;
-        currentName = line.substring(nameIndex).trim() || "Unnamed Channel";
-      } else if (!line.startsWith("#")) {
-        channels.push({
-          name: currentName,
-          url: line
-        });
-        currentName = "";
+      if (line.startsWith("#EXTINF")) {
+        current = {};
+
+        // Channel name
+        const nameMatch = line.match(/,(.*)$/);
+        current.name = nameMatch ? nameMatch[1].trim() : "Unnamed";
+
+        // Logo
+        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+        current.logo = logoMatch ? logoMatch[1] : "";
+      }
+      else if (!line.startsWith("#")) {
+        current.url = line;
+        channels.push(current);
+        current = {};
       }
     }
 
     renderChannels(channels);
   })
   .catch(err => {
-    console.error("Failed to load playlist:", err);
-    alert("Failed to load playlist. Check your M3U path or URL.");
+    alert("Failed to load playlist");
+    console.error(err);
   });
 
-// Render channel list
+// Render list
 function renderChannels(list) {
   channelList.innerHTML = "";
+
   list.forEach(ch => {
     const li = document.createElement("li");
-    li.textContent = ch.name;
-    li.addEventListener("click", () => {
+
+    const img = document.createElement("img");
+    img.className = "logo";
+    img.src = ch.logo || "https://via.placeholder.com/48?text=TV";
+    img.onerror = () => img.src = "https://via.placeholder.com/48?text=TV";
+
+    const name = document.createElement("div");
+    name.className = "channel-name";
+    name.textContent = ch.name;
+
+    li.appendChild(img);
+    li.appendChild(name);
+
+    li.onclick = () => {
       player.src = ch.url;
       player.play();
-    });
+    };
+
     channelList.appendChild(li);
   });
 }
 
-// Search filter
+// Search
 searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase();
-  const filtered = channels.filter(ch =>
-    ch.name.toLowerCase().includes(query)
+  const q = searchInput.value.toLowerCase();
+  renderChannels(
+    channels.filter(c => c.name.toLowerCase().includes(q))
   );
-  renderChannels(filtered);
 });
 </script>
 
