@@ -28,6 +28,7 @@ h1 { text-align:center; color:#00ccff; }
 #dropdown { display:none; position:absolute; top:40px; right:0; background:#1e1e1e; border-radius:6px; padding:10px; }
 #dropdown a, #dropdown button { color:#00ccff; display:block; margin:5px 0; background:none; border:none; cursor:pointer; text-align:left; }
 #credits { margin-top:20px; font-size:14px; text-align:center; color:#aaa; }
+#loadMore { margin:20px; padding:10px 20px; font-size:16px; }
 </style>
 </head>
 <body>
@@ -48,7 +49,6 @@ h1 { text-align:center; color:#00ccff; }
 
   <input type="text" id="search" placeholder="Search channels...">
 
-  <!-- FULL LANGUAGE DROPDOWN -->
   <select id="translatorSelect">
     <option value="original">🌐 Original</option>
     <option value="af">Afrikaans</option>
@@ -162,7 +162,7 @@ h1 { text-align:center; color:#00ccff; }
   </select>
 
   <ul id="channelList"></ul>
-  <button id="loadMore" style="margin:20px;padding:10px 20px;font-size:16px;">Load 10 More</button>
+  <button id="loadMore">Load 10 More</button>
 </div>
 
 <div id="credits">
@@ -203,6 +203,7 @@ let channels = [];
 let index = 0;
 const PAGE_SIZE = 10;
 let filteredChannels = [];
+const translationCache = {}; // caching translations
 
 fetch(playlistURL)
   .then(res => res.text())
@@ -216,10 +217,7 @@ fetch(playlistURL)
         current = {};
         const nameMatch = line.match(/,(.*)$/);
         current.name = nameMatch ? nameMatch[1].trim() : "Unnamed";
-        current.logo = ""; // default empty
-        current.translations = {};
-        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-        current.logo = logoMatch ? logoMatch[1] : "";
+        current.logo = "";
       } else if(!line.startsWith("#")){
         current.url = line;
         channels.push(current);
@@ -230,81 +228,70 @@ fetch(playlistURL)
     renderChannels();
   });
 
-function renderChannels() {
+async function translateText(text, lang){
+  const key = text + "-" + lang;
+  if(lang === "original") return text;
+  if(translationCache[key]) return translationCache[key];
+  try{
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
+    const data = await res.json();
+    translationCache[key] = data[0][0][0];
+    return data[0][0][0];
+  } catch(e){ return text; }
+}
+
+async function renderChannels(){
+  const lang = translatorSelect.value;
   const nextBatch = filteredChannels.slice(index, index + PAGE_SIZE);
-  nextBatch.forEach(ch => {
+  for(const ch of nextBatch){
     const li = document.createElement("li");
 
     const img = document.createElement("img");
     img.className = "logo";
-    img.src = ch.logo && ch.logo.trim() !== "" ? ch.logo : "https://via.placeholder.com/48?text=TV";
+    img.src = ch.logo && ch.logo.trim()!=="" ? ch.logo : "https://via.placeholder.com/48?text=TV";
     img.onerror = () => { img.src = "https://via.placeholder.com/48?text=TV"; };
 
-    const name = document.createElement("div");
-    name.className = "channel-name";
-    name.textContent = ch.translations[translatorSelect.value] || ch.name;
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "channel-name";
+    nameDiv.textContent = await translateText(ch.name, lang);
 
     li.appendChild(img);
-    li.appendChild(name);
+    li.appendChild(nameDiv);
 
     li.onclick = async () => {
       player.src = ch.url;
       player.autoplay = true;
       player.play();
-      const lang = translatorSelect.value;
-      if(lang==="original") captionDiv.textContent = ch.name;
-      else {
-        try {
-          const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(ch.name)}`);
-          const data = await res.json();
-          captionDiv.textContent = data[0][0][0];
-        } catch(e){ captionDiv.textContent = ch.name; }
-      }
+      captionDiv.textContent = await translateText(ch.name, lang);
     };
 
     channelList.appendChild(li);
-  });
+  }
   index += PAGE_SIZE;
   document.getElementById("loadMore").style.display = index >= filteredChannels.length ? "none" : "inline-block";
 }
 
-searchInput.addEventListener("input", ()=>{
+searchInput.addEventListener("input", async ()=>{
   const q = searchInput.value.toLowerCase();
   index = 0;
   channelList.innerHTML = "";
-  filteredChannels = channels.filter(c=>c.name.toLowerCase().includes(q));
+  filteredChannels = channels.filter(c => c.name.toLowerCase().includes(q));
   document.getElementById("loadMore").style.display = "inline-block";
-  renderChannels();
+  await renderChannels();
 });
 
-document.getElementById("loadMore").addEventListener("click",renderChannels);
+document.getElementById("loadMore").addEventListener("click", renderChannels);
 
-translatorSelect.addEventListener("change", ()=>{
+translatorSelect.addEventListener("change", async ()=>{
+  const lang = translatorSelect.value;
   Array.from(channelList.children).forEach(async (li,i)=>{
     const ch = filteredChannels[i];
-    const lang = translatorSelect.value;
     const nameDiv = li.querySelector(".channel-name");
-    if(lang==="original") nameDiv.textContent = ch.name;
-    else {
-      try{
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(ch.name)}`);
-        const data = await res.json();
-        nameDiv.textContent = data[0][0][0];
-      }catch(e){ nameDiv.textContent = ch.name; }
-    }
+    nameDiv.textContent = await translateText(ch.name, lang);
   });
   if(player.src){
     const playing = filteredChannels.find(c=>c.url===player.src);
-    if(playing){
-      const lang = translatorSelect.value;
-      if(lang==="original") captionDiv.textContent = playing.name;
-      else {
-        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(playing.name)}`)
-        .then(res=>res.json())
-        .then(data=>captionDiv.textContent = data[0][0][0])
-        .catch(()=> captionDiv.textContent = playing.name);
-      }
-    }
+    if(playing) captionDiv.textContent = await translateText(playing.name, lang);
   }
 });
 </script>
