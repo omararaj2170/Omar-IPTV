@@ -203,7 +203,7 @@ let channels = [];
 let index = 0;
 const PAGE_SIZE = 10;
 let filteredChannels = [];
-const translationCache = {}; // caching translations
+const translationCache = {};
 
 fetch(playlistURL)
   .then(res => res.text())
@@ -248,8 +248,12 @@ async function renderChannels(){
 
     const img = document.createElement("img");
     img.className = "logo";
-    img.src = ch.logo && ch.logo.trim()!=="" ? ch.logo : "https://via.placeholder.com/48?text=TV";
-    img.onerror = () => { img.src = "https://via.placeholder.com/48?text=TV"; };
+    if(ch.logo && ch.logo.trim() !== ""){
+      img.src = ch.logo;
+      img.onerror = () => { img.src = "https://via.placeholder.com/48?text=TV"; };
+    } else {
+      img.src = "https://via.placeholder.com/48?text=TV";
+    }
 
     const nameDiv = document.createElement("div");
     nameDiv.className = "channel-name";
