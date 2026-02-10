@@ -17,14 +17,11 @@
   #channelList li:hover { background:#222; }
   .logo { width:48px; height:48px; object-fit:contain; background:#000; border-radius:6px; }
   .channel-name { font-size:16px; flex:1; }
-  /* … MENU */
   #menu { position:fixed; top:10px; right:20px; background:#1e1e1e; padding:10px 15px; border-radius:6px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; font-size:16px; z-index:9999; min-width:180px; }
   #menu-top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   #menu a { color:#00ccff; text-decoration:none; cursor:pointer; }
   .credits { font-size:12px; color:#888; line-height:1.4; }
   #loadMore { margin:20px; padding:10px 20px; font-size:16px; cursor:pointer; border:none; border-radius:6px; background:#00ccff; color:#000; }
-  /* Captions styling */
-  track { display:none; }
 </style>
 </head>
 <body>
@@ -36,15 +33,18 @@
   <div id="menu-top">
     <span id="helloText">Hello!</span>
     <a id="signInLink" href="login.html">Sign In</a> / <a id="signUpLink" href="login.html">Sign Up</a>
+    <span id="menuToggle" style="cursor:pointer; color:#00ccff;"> … </span>
   </div>
-  <div class="credits">
-    Powered by Google Translate<br>
-    Powered by GitHub Pages
+  <div id="menuContent" style="display:none; flex-direction:column; gap:5px; margin-top:5px;">
+    <a id="logoutLink" href="#">Log Out</a>
+    <div class="credits">
+      Powered by Google Translate<br>
+      Powered by GitHub Pages
+    </div>
   </div>
 </div>
 
 <div id="container">
-  <!-- IPTV player with captions -->
   <video id="player" controls autoplay>
     <track id="captionsTrack" kind="subtitles" label="Captions" srclang="en" default>
   </video>
@@ -54,7 +54,6 @@
     <input type="text" id="search" placeholder="Search channels...">
     <select id="translatorSelect" class="translate-dropdown">
       <option value="original">Original</option>
-      <!-- Add all languages except Hebrew -->
       <option value="af">Afrikaans</option>
       <option value="sq">Albanian</option>
       <option value="am">Amharic</option>
@@ -180,12 +179,18 @@ const loadMoreBtn=document.getElementById("loadMore");
 
 let channels=[],index=0,currentLang="original";
 
+// MENU toggle & logout
+const menuToggle=document.getElementById("menuToggle");
+const menuContent=document.getElementById("menuContent");
+menuToggle.addEventListener("click",()=>{menuContent.style.display=menuContent.style.display==="none"?"flex":"none";});
+document.getElementById("logoutLink").addEventListener("click",e=>{e.preventDefault(); localStorage.removeItem("iptvUsername"); location.reload();});
+
 // Login check
 let username=localStorage.getItem("iptvUsername");
 const helloText=document.getElementById("helloText");
 const signInLink=document.getElementById("signInLink");
 const signUpLink=document.getElementById("signUpLink");
-if(username){ helloText.textContent=`Hello, ${username}!`; signInLink.style.display="none"; signUpLink.style.display="none"; }
+if(username){ helloText.textContent=`Hello, ${username}!`; signInLink.style.display="none"; signUpLink.style.display="none"; menuContent.style.display="none"; }
 
 // Fetch playlist
 fetch(playlistURL).then(r=>r.text()).then(text=>{
@@ -239,7 +244,6 @@ function renderChannels(filteredList){
     li.onclick=()=>{
       player.src=ch.url;
       player.play();
-      // Update captions
       captionsTrack.innerHTML=`<track kind="subtitles" srclang="${currentLang}" label="Captions" default srcdoc="${name.textContent}">`;
     }
     channelList.appendChild(li);
@@ -257,7 +261,7 @@ searchInput.addEventListener("input",()=>{
   renderChannels(filtered);
 });
 
-// Translator change
+// Translator
 translatorSelect.addEventListener("change",()=>{
   currentLang=translatorSelect.value;
   index=0;
