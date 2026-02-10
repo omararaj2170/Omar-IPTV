@@ -6,5 +6,9 @@ This is the repo For Omar-IPTV.
 # Links 
 https://omararaj2170.github.io/Omar-IPTV/
 
-For Your IPTV player
+# For Your IPTV player
 https://raw.githubusercontent.com/omararaj2170/Omar-IPTV/refs/heads/main/playlist.m3u
+
+# Contribuitors
+
+omararaj2170
