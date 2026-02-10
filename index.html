@@ -247,7 +247,7 @@ async function renderChannels(){
 
     const nameDiv = document.createElement("div");
     nameDiv.className = "channel-name";
-    nameDiv.textContent = ch.name; // show original first
+    nameDiv.textContent = ch.name;
 
     li.appendChild(img);
     li.appendChild(nameDiv);
@@ -256,12 +256,11 @@ async function renderChannels(){
       player.src = ch.url;
       player.autoplay = true;
       player.play();
-      captionDiv.textContent = nameDiv.textContent;
+      captionDiv.textContent = lang==="original"?ch.name:await translateText(ch.name, lang);
     };
 
     channelList.appendChild(li);
 
-    // translate in background
     if(lang !== "original"){
       const translated = await translateText(ch.name, lang);
       nameDiv.textContent = translated;
