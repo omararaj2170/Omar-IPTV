@@ -19,6 +19,7 @@
     color: #00ccff;
   }
 
+  /* Menu styles */
   #menuButton {
     position: fixed;
     top: 20px;
@@ -30,6 +31,7 @@
     cursor: pointer;
     border-radius: 6px;
     padding: 4px 12px;
+    z-index: 1000;
   }
 
   #menuDropdown {
@@ -67,7 +69,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 60px; /* leave space for menu */
+    margin-top: 60px; /* space for menu */
+    width: 100%;
   }
 
   #player {
@@ -77,16 +80,33 @@
     background: black;
   }
 
+  #search-container {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+    max-width:800px;
+    margin-bottom:10px;
+  }
+
   #search {
-    width: 100%;
-    max-width: 800px;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: none;
-    font-size: 16px;
-    background: #1e1e1e;
-    color: #fff;
+    flex:1;
+    margin-right:10px;
+    padding:10px;
+    border-radius:6px;
+    border:none;
+    font-size:16px;
+    background:#1e1e1e;
+    color:#fff;
+  }
+
+  #translatorSelect {
+    padding:10px;
+    border-radius:6px;
+    border:none;
+    background:#00ccff;
+    color:#000;
+    cursor:pointer;
   }
 
   #channelList {
@@ -122,9 +142,25 @@
     font-size: 16px;
     flex: 1;
   }
-</style>
-</head>
 
+  /* Google Translate */
+  #google_translate_element { display:none; }
+  .goog-te-banner-frame.skiptranslate { display:none !important; }
+  body { top:0 !important; }
+</style>
+
+<!-- Google Translate Script -->
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+  }, 'google_translate_element');
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+</head>
 <body>
 
 <h1>📺 Omar's IPTV</h1>
@@ -132,24 +168,156 @@
 <!-- Top-right menu -->
 <button id="menuButton">…</button>
 <div id="menuDropdown">
-  <div style="padding: 10px; border-bottom: 1px solid #333;">Hello!</div>
-  <button onclick="window.location.href='login.html'">Sign In / Sign Up</button>
-  <button onclick="alert('Translator coming soon!')">🌐 Translator</button>
+  <div id="greeting" style="padding:10px; border-bottom:1px solid #333;">Hello!</div>
+  <button id="authButton">Sign In / Sign Up</button>
+  <button id="logoutButton" style="display:none;">Logout</button>
 </div>
+
+<!-- Hidden Google Translate element -->
+<div id="google_translate_element"></div>
 
 <div id="container">
   <video id="player" controls autoplay></video>
 
-  <input
-    type="text"
-    id="search"
-    placeholder="Search channels..."
-  >
+  <!-- Search + Translate -->
+  <div id="search-container">
+    <input type="text" id="search" placeholder="Search channels...">
+
+    <!-- Translator dropdown full (Hebrew removed) -->
+    <select id="translatorSelect">
+      <option value="">🌐 Translate</option>
+      <option value="af">Afrikaans</option>
+      <option value="sq">Albanian</option>
+      <option value="am">Amharic</option>
+      <option value="ar">Arabic</option>
+      <option value="hy">Armenian</option>
+      <option value="az">Azerbaijani</option>
+      <option value="eu">Basque</option>
+      <option value="be">Belarusian</option>
+      <option value="bn">Bengali</option>
+      <option value="bs">Bosnian</option>
+      <option value="bg">Bulgarian</option>
+      <option value="ca">Catalan</option>
+      <option value="ceb">Cebuano</option>
+      <option value="ny">Chichewa</option>
+      <option value="zh-CN">Chinese (Simplified)</option>
+      <option value="zh-TW">Chinese (Traditional)</option>
+      <option value="co">Corsican</option>
+      <option value="hr">Croatian</option>
+      <option value="cs">Czech</option>
+      <option value="da">Danish</option>
+      <option value="nl">Dutch</option>
+      <option value="en">English</option>
+      <option value="eo">Esperanto</option>
+      <option value="et">Estonian</option>
+      <option value="tl">Filipino</option>
+      <option value="fi">Finnish</option>
+      <option value="fr">French</option>
+      <option value="fy">Frisian</option>
+      <option value="gl">Galician</option>
+      <option value="ka">Georgian</option>
+      <option value="de">German</option>
+      <option value="el">Greek</option>
+      <option value="gu">Gujarati</option>
+      <option value="ht">Haitian Creole</option>
+      <option value="ha">Hausa</option>
+      <option value="haw">Hawaiian</option>
+      <option value="hi">Hindi</option>
+      <option value="hmn">Hmong</option>
+      <option value="hu">Hungarian</option>
+      <option value="is">Icelandic</option>
+      <option value="ig">Igbo</option>
+      <option value="id">Indonesian</option>
+      <option value="ga">Irish</option>
+      <option value="it">Italian</option>
+      <option value="ja">Japanese</option>
+      <option value="jw">Javanese</option>
+      <option value="kn">Kannada</option>
+      <option value="kk">Kazakh</option>
+      <option value="km">Khmer</option>
+      <option value="rw">Kinyarwanda</option>
+      <option value="ko">Korean</option>
+      <option value="ku">Kurdish (Kurmanji)</option>
+      <option value="ky">Kyrgyz</option>
+      <option value="lo">Lao</option>
+      <option value="la">Latin</option>
+      <option value="lv">Latvian</option>
+      <option value="lt">Lithuanian</option>
+      <option value="lb">Luxembourgish</option>
+      <option value="mk">Macedonian</option>
+      <option value="mg">Malagasy</option>
+      <option value="ms">Malay</option>
+      <option value="ml">Malayalam</option>
+      <option value="mt">Maltese</option>
+      <option value="mi">Maori</option>
+      <option value="mr">Marathi</option>
+      <option value="mn">Mongolian</option>
+      <option value="my">Myanmar (Burmese)</option>
+      <option value="ne">Nepali</option>
+      <option value="no">Norwegian</option>
+      <option value="or">Odia (Oriya)</option>
+      <option value="ps">Pashto</option>
+      <option value="fa">Persian</option>
+      <option value="pl">Polish</option>
+      <option value="pt">Portuguese</option>
+      <option value="pa">Punjabi</option>
+      <option value="ro">Romanian</option>
+      <option value="ru">Russian</option>
+      <option value="sm">Samoan</option>
+      <option value="gd">Scots Gaelic</option>
+      <option value="sr">Serbian</option>
+      <option value="st">Sesotho</option>
+      <option value="sn">Shona</option>
+      <option value="sd">Sindhi</option>
+      <option value="si">Sinhala</option>
+      <option value="sk">Slovak</option>
+      <option value="sl">Slovenian</option>
+      <option value="so">Somali</option>
+      <option value="es">Spanish</option>
+      <option value="su">Sundanese</option>
+      <option value="sw">Swahili</option>
+      <option value="sv">Swedish</option>
+      <option value="tg">Tajik</option>
+      <option value="ta">Tamil</option>
+      <option value="tt">Tatar</option>
+      <option value="te">Telugu</option>
+      <option value="th">Thai</option>
+      <option value="tr">Turkish</option>
+      <option value="tk">Turkmen</option>
+      <option value="uk">Ukrainian</option>
+      <option value="ur">Urdu</option>
+      <option value="ug">Uyghur</option>
+      <option value="uz">Uzbek</option>
+      <option value="vi">Vietnamese</option>
+      <option value="cy">Welsh</option>
+      <option value="xh">Xhosa</option>
+      <option value="yi">Yiddish</option>
+      <option value="yo">Yoruba</option>
+      <option value="zu">Zulu</option>
+    </select>
+  </div>
 
   <ul id="channelList"></ul>
 </div>
 
 <script>
+// ----------------- LOGIN CHECK -----------------
+const loggedIn = JSON.parse(localStorage.getItem("omarsIPTVLoggedIn"));
+const greeting = document.getElementById("greeting");
+const authButton = document.getElementById("authButton");
+const logoutButton = document.getElementById("logoutButton");
+
+if (loggedIn) {
+  greeting.textContent = `Hello, ${loggedIn.username || loggedIn.email || loggedIn.phone}!`;
+  authButton.style.display = "none";
+  logoutButton.style.display = "block";
+} else {
+  greeting.textContent = "Hello!";
+  authButton.style.display = "block";
+  logoutButton.style.display = "none";
+}
+
+// ----------------- MENU TOGGLE -----------------
 const menuButton = document.getElementById("menuButton");
 const menuDropdown = document.getElementById("menuDropdown");
 
@@ -163,8 +331,32 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// IPTV JS
-const playlistURL = "playlist.m3u";
+// ----------------- AUTH -----------------
+authButton.addEventListener("click", () => {
+  window.location.href = "login.html";
+});
+logoutButton.addEventListener("click", () => {
+  localStorage.removeItem("omarsIPTVLoggedIn");
+  window.location.href = "login.html";
+});
+
+// ----------------- TRANSLATOR -----------------
+const translatorSelect = document.getElementById("translatorSelect");
+translatorSelect.addEventListener("change", () => {
+  const lang = translatorSelect.value;
+  if(!lang) return;
+
+  const select = document.querySelector(".goog-te-combo");
+  if(select) {
+    select.value = lang;
+    select.dispatchEvent(new Event('change'));
+  } else {
+    alert("Please wait a moment, Google Translate is loading.");
+  }
+});
+
+// ----------------- IPTV PLAYER -----------------
+const playlistURL = "playlist.m3u"; 
 const channelList = document.getElementById("channelList");
 const player = document.getElementById("player");
 const searchInput = document.getElementById("search");
