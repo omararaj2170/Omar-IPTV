@@ -91,17 +91,38 @@
   <h2 id="formTitle">Sign In</h2>
 
   <form id="loginForm">
-    <label for="userInput">Phone / Email / Username</label>
-    <input type="text" id="userInput" placeholder="Enter your info" required>
+    <!-- Sign Up fields -->
+    <div id="signupFields" style="display:none;">
+      <label for="phoneInput">Phone Number</label>
+      <input type="text" id="phoneInput" placeholder="Enter your phone">
 
-    <label for="passwordInput">Password</label>
-    <input type="password" id="passwordInput" placeholder="Enter your password" required>
+      <label for="emailInput">Email</label>
+      <input type="email" id="emailInput" placeholder="Enter your email">
+
+      <label for="usernameInput">Username</label>
+      <input type="text" id="usernameInput" placeholder="Choose a username">
+
+      <label for="passwordInputSignUp">Password</label>
+      <input type="password" id="passwordInputSignUp" placeholder="Enter a password">
+
+      <label for="confirmPasswordInput">Confirm Password</label>
+      <input type="password" id="confirmPasswordInput" placeholder="Confirm password">
+    </div>
+
+    <!-- Sign In fields -->
+    <div id="signinFields">
+      <label for="userLoginInput">Phone / Email / Username</label>
+      <input type="text" id="userLoginInput" placeholder="Enter your info">
+
+      <label for="passwordLoginInput">Password</label>
+      <input type="password" id="passwordLoginInput" placeholder="Enter your password">
+    </div>
 
     <button type="submit" id="submitButton">Sign In</button>
   </form>
 
   <div class="toggle">
-    Don't have an account? <span id="toggleForm">Sign Up</span>
+    <span id="toggleForm">Sign Up</span>
   </div>
 
   <div class="message" id="message"></div>
@@ -114,9 +135,12 @@ const submitButton = document.getElementById("submitButton");
 const toggleForm = document.getElementById("toggleForm");
 const messageDiv = document.getElementById("message");
 
+const signupFields = document.getElementById("signupFields");
+const signinFields = document.getElementById("signinFields");
+
 let isSignUp = false;
 
-// Toggle between Sign In / Sign Up
+// Toggle Sign In / Sign Up
 toggleForm.addEventListener("click", () => {
   isSignUp = !isSignUp;
   messageDiv.textContent = "";
@@ -124,47 +148,89 @@ toggleForm.addEventListener("click", () => {
     formTitle.textContent = "Sign Up";
     submitButton.textContent = "Sign Up";
     toggleForm.textContent = "Sign In";
+    signupFields.style.display = "block";
+    signinFields.style.display = "none";
   } else {
     formTitle.textContent = "Sign In";
     submitButton.textContent = "Sign In";
     toggleForm.textContent = "Sign Up";
+    signupFields.style.display = "none";
+    signinFields.style.display = "block";
   }
 });
 
-// Submit handler
+// Helper to load accounts from localStorage
+function loadAccounts() {
+  return JSON.parse(localStorage.getItem("omarsIPTVAccounts") || "[]");
+}
+
+// Helper to save accounts
+function saveAccounts(accounts) {
+  localStorage.setItem("omarsIPTVAccounts", JSON.stringify(accounts));
+}
+
 loginForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const user = document.getElementById("userInput").value.trim();
-  const password = document.getElementById("passwordInput").value;
-
-  if (!user || !password) {
-    messageDiv.textContent = "Please fill in all fields!";
-    return;
-  }
-
-  // Load accounts from localStorage
-  let accounts = JSON.parse(localStorage.getItem("accounts") || "{}");
-
   if (isSignUp) {
-    if (accounts[user]) {
-      messageDiv.textContent = "User already exists!";
+    const phone = document.getElementById("phoneInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
+    const username = document.getElementById("usernameInput").value.trim();
+    const password = document.getElementById("passwordInputSignUp").value;
+    const confirmPassword = document.getElementById("confirmPasswordInput").value;
+
+    if (!phone || !email || !username || !password || !confirmPassword) {
+      messageDiv.style.color = "#ff5555";
+      messageDiv.textContent = "All fields are required!";
       return;
     }
-    accounts[user] = password;
-    localStorage.setItem("accounts", JSON.stringify(accounts));
+
+    if (password !== confirmPassword) {
+      messageDiv.style.color = "#ff5555";
+      messageDiv.textContent = "Passwords do not match!";
+      return;
+    }
+
+    const accounts = loadAccounts();
+
+    // Check if user/email/phone already exists
+    const exists = accounts.some(acc => acc.phone === phone || acc.email === email || acc.username === username);
+    if (exists) {
+      messageDiv.style.color = "#ff5555";
+      messageDiv.textContent = "Phone, Email, or Username already exists!";
+      return;
+    }
+
+    // Save account
+    accounts.push({ phone, email, username, password });
+    saveAccounts(accounts);
+
     messageDiv.style.color = "#00ff88";
-    messageDiv.textContent = "Sign Up successful! You can now Sign In.";
-    // auto switch to sign in
+    messageDiv.textContent = "Sign Up successful! Redirecting to Sign In...";
     setTimeout(() => { toggleForm.click(); }, 1500);
   } else {
-    if (accounts[user] && accounts[user] === password) {
+    const loginInput = document.getElementById("userLoginInput").value.trim();
+    const password = document.getElementById("passwordLoginInput").value;
+
+    if (!loginInput || !password) {
+      messageDiv.style.color = "#ff5555";
+      messageDiv.textContent = "All fields are required!";
+      return;
+    }
+
+    const accounts = loadAccounts();
+    const account = accounts.find(acc =>
+      acc.phone === loginInput || acc.email === loginInput || acc.username === loginInput
+    );
+
+    if (account && account.password === password) {
       messageDiv.style.color = "#00ff88";
       messageDiv.textContent = "Sign In successful! Redirecting...";
-      // Here you can redirect to your main IPTV page
+      // Save logged-in user
+      localStorage.setItem("omarsIPTVLoggedIn", JSON.stringify(account));
       setTimeout(() => { window.location.href = "index.html"; }, 1000);
     } else {
       messageDiv.style.color = "#ff5555";
-      messageDiv.textContent = "Invalid username or password!";
+      messageDiv.textContent = "Invalid login or password!";
     }
   }
 
