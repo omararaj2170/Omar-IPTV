@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Omar's IPTV</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #121212;
-  color: #eee;
-  margin: 0;
-  padding: 20px;
-}
+body { font-family: Arial, sans-serif; background: #121212; color: #eee; margin: 0; padding: 20px; }
 h1 { text-align:center; color:#00ccff; }
 #container { display:flex; flex-direction:column; align-items:center; position:relative; }
 #player { width:100%; max-width:800px; background:black; position:relative; }
@@ -23,7 +17,6 @@ h1 { text-align:center; color:#00ccff; }
 #channelList li:hover { background:#222; }
 .logo { width:48px; height:48px; object-fit:contain; background:#000; border-radius:6px; }
 .channel-name { font-size:16px; flex:1; }
-/* … menu */
 #menu { position:fixed; top:10px; right:10px; background:#1e1e1e; padding:10px; border-radius:6px; cursor:pointer; z-index:100; }
 #dropdown { display:none; position:absolute; top:40px; right:0; background:#1e1e1e; border-radius:6px; padding:10px; }
 #dropdown a, #dropdown button { color:#00ccff; display:block; margin:5px 0; background:none; border:none; cursor:pointer; text-align:left; }
@@ -244,7 +237,7 @@ async function translateText(text, lang){
 async function renderChannels(){
   const lang = translatorSelect.value;
   const nextBatch = filteredChannels.slice(index, index + PAGE_SIZE);
-  for(const ch of nextBatch){
+  nextBatch.forEach(async (ch)=>{
     const li = document.createElement("li");
 
     const img = document.createElement("img");
@@ -254,7 +247,7 @@ async function renderChannels(){
 
     const nameDiv = document.createElement("div");
     nameDiv.className = "channel-name";
-    nameDiv.textContent = await translateText(ch.name, lang);
+    nameDiv.textContent = ch.name; // show original first
 
     li.appendChild(img);
     li.appendChild(nameDiv);
@@ -263,11 +256,18 @@ async function renderChannels(){
       player.src = ch.url;
       player.autoplay = true;
       player.play();
-      captionDiv.textContent = await translateText(ch.name, lang);
+      captionDiv.textContent = nameDiv.textContent;
     };
 
     channelList.appendChild(li);
-  }
+
+    // translate in background
+    if(lang !== "original"){
+      const translated = await translateText(ch.name, lang);
+      nameDiv.textContent = translated;
+    }
+  });
+
   index += PAGE_SIZE;
   document.getElementById("loadMore").style.display = index >= filteredChannels.length ? "none" : "inline-block";
 }
@@ -288,7 +288,7 @@ translatorSelect.addEventListener("change", async ()=>{
   Array.from(channelList.children).forEach(async (li,i)=>{
     const ch = filteredChannels[i];
     const nameDiv = li.querySelector(".channel-name");
-    nameDiv.textContent = await translateText(ch.name, lang);
+    if(ch) nameDiv.textContent = await translateText(ch.name, lang);
   });
   if(player.src){
     const playing = filteredChannels.find(c=>c.url===player.src);
