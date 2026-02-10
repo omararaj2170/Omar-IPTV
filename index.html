@@ -9,115 +9,25 @@ body {
   font-family: Arial, sans-serif;
   background: #121212;
   color: #eee;
-  padding: 20px;
   margin: 0;
+  padding: 20px;
 }
-
-h1 {
-  text-align: center;
-  color: #00ccff;
-}
-
-#container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-#player {
-  width: 100%;
-  max-width: 800px;
-  margin: 20px 0;
-  background: black;
-  position: relative;
-}
-
-#caption {
-  position: absolute;
-  bottom: 50px;
-  width: 100%;
-  text-align: center;
-  color: #fff;
-  text-shadow: 2px 2px 4px #000;
-  font-size: 18px;
-  pointer-events: none;
-}
-
-#search {
-  width: 100%;
-  max-width: 800px;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border: none;
-  font-size: 16px;
-  background: #1e1e1e;
-  color: #fff;
-}
-
-#translatorSelect {
-  padding:10px;
-  border-radius:6px;
-  border:none;
-  background:#00ccff;
-  color:#000;
-  cursor:pointer;
-  margin-bottom:10px;
-}
-
-#channelList {
-  list-style: none;
-  padding: 0;
-  width: 100%;
-  max-width: 800px;
-}
-
-#channelList li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-#channelList li:hover {
-  background: #222;
-}
-
-.logo {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  background: #000;
-  border-radius: 6px;
-}
-
-.channel-name {
-  font-size: 16px;
-  flex: 1;
-}
-
+h1 { text-align:center; color:#00ccff; }
+#container { display:flex; flex-direction:column; align-items:center; position:relative; }
+#player { width:100%; max-width:800px; background:black; position:relative; }
+#caption { position:absolute; bottom:50px; width:100%; text-align:center; color:#fff; text-shadow:2px 2px 4px #000; font-size:18px; pointer-events:none; }
+#search { width:100%; max-width:800px; padding:10px; margin-bottom:10px; border-radius:6px; border:none; font-size:16px; background:#1e1e1e; color:#fff; }
+#translatorSelect { padding:10px; border-radius:6px; border:none; background:#00ccff; color:#000; cursor:pointer; margin-bottom:10px; }
+#channelList { list-style:none; padding:0; width:100%; max-width:800px; }
+#channelList li { display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid #333; cursor:pointer; transition:background 0.2s; }
+#channelList li:hover { background:#222; }
+.logo { width:48px; height:48px; object-fit:contain; background:#000; border-radius:6px; }
+.channel-name { font-size:16px; flex:1; }
 /* … menu */
-#menu {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: #1e1e1e;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 100;
-}
-
-#credits {
-  margin-top: 20px;
-  font-size: 14px;
-  text-align: center;
-  color: #aaa;
-}
+#menu { position:fixed; top:10px; right:10px; background:#1e1e1e; padding:10px; border-radius:6px; cursor:pointer; z-index:100; }
+#dropdown { display:none; position:absolute; top:40px; right:0; background:#1e1e1e; border-radius:6px; padding:10px; }
+#dropdown a, #dropdown button { color:#00ccff; display:block; margin:5px 0; background:none; border:none; cursor:pointer; text-align:left; }
+#credits { margin-top:20px; font-size:14px; text-align:center; color:#aaa; }
 </style>
 </head>
 <body>
@@ -125,9 +35,11 @@ h1 {
 <h1>📺 Omar's IPTV</h1>
 
 <div id="menu">
-  <span id="greeting">Hello!</span>
-  <span id="authLinks"><a href="login.html" style="color:#00ccff;">Sign In / Sign Up</a></span>
-  <button id="logoutBtn" style="display:none; margin-left:10px;">Logout</button>
+  <span id="greeting">Hello!</span> …
+  <div id="dropdown">
+    <span id="authLinks"><a href="login.html">Sign In / Sign Up</a></span>
+    <button id="logoutBtn" style="display:none;">Logout</button>
+  </div>
 </div>
 
 <div id="container">
@@ -135,6 +47,8 @@ h1 {
   <div id="caption"></div>
 
   <input type="text" id="search" placeholder="Search channels...">
+
+  <!-- FULL LANGUAGE DROPDOWN -->
   <select id="translatorSelect">
     <option value="original">🌐 Original</option>
     <option value="af">Afrikaans</option>
@@ -216,6 +130,7 @@ h1 {
     <option value="ru">Russian</option>
     <option value="sm">Samoan</option>
     <option value="gd">Scots Gaelic</option>
+    <option value="sr">Serbian</option>
     <option value="st">Sesotho</option>
     <option value="sn">Shona</option>
     <option value="sd">Sindhi</option>
@@ -255,23 +170,29 @@ h1 {
 </div>
 
 <script>
-// --- LOGIN / MENU ---
+// --- MENU ---
+const menu = document.getElementById("menu");
+const dropdown = document.getElementById("dropdown");
+menu.addEventListener("click", ()=> dropdown.style.display = dropdown.style.display==="block"?"none":"block");
+
 const username = localStorage.getItem("iptvUsername");
 const greeting = document.getElementById("greeting");
 const authLinks = document.getElementById("authLinks");
 const logoutBtn = document.getElementById("logoutBtn");
+
 if(username){
   greeting.textContent = `Hello! ${username}`;
   authLinks.style.display = "none";
-  logoutBtn.style.display = "inline-block";
+  logoutBtn.style.display = "block";
 }
+
 logoutBtn.addEventListener("click", ()=>{
   localStorage.removeItem("iptvUsername");
   window.location.reload();
 });
 
 // --- IPTV ---
-const playlistURL = "playlist.m3u"; // replace with your M3U path
+const playlistURL = "playlist.m3u"; 
 const channelList = document.getElementById("channelList");
 const player = document.getElementById("player");
 const searchInput = document.getElementById("search");
@@ -283,7 +204,6 @@ let index = 0;
 const PAGE_SIZE = 10;
 let filteredChannels = [];
 
-// Load M3U
 fetch(playlistURL)
   .then(res => res.text())
   .then(text => {
@@ -296,12 +216,10 @@ fetch(playlistURL)
         current = {};
         const nameMatch = line.match(/,(.*)$/);
         current.name = nameMatch ? nameMatch[1].trim() : "Unnamed";
-        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-        current.logo = logoMatch ? logoMatch[1] : "";
+        current.translations = {};
       } else if(!line.startsWith("#")){
         current.url = line;
         channels.push(current);
-        current.translations = {}; // store translated names
         current = {};
       }
     }
@@ -309,7 +227,6 @@ fetch(playlistURL)
     renderChannels();
   });
 
-// Render channels
 function renderChannels(){
   const nextBatch = filteredChannels.slice(index, index+PAGE_SIZE);
   nextBatch.forEach(ch=>{
@@ -318,18 +235,27 @@ function renderChannels(){
     img.className = "logo";
     img.src = ch.logo || "https://via.placeholder.com/48?text=TV";
     img.onerror = ()=> img.src = "https://via.placeholder.com/48?text=TV";
+
     const name = document.createElement("div");
     name.className = "channel-name";
     name.textContent = ch.translations[translatorSelect.value] || ch.name;
+
     li.appendChild(img);
     li.appendChild(name);
 
-    li.onclick = ()=>{
+    li.onclick = async ()=>{
       player.src = ch.url;
       player.autoplay = true;
       player.play();
-      // Update caption
-      captionDiv.textContent = ch.translations[translatorSelect.value] || ch.name;
+      const lang = translatorSelect.value;
+      if(lang==="original") captionDiv.textContent = ch.name;
+      else {
+        try {
+          const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(ch.name)}`);
+          const data = await res.json();
+          captionDiv.textContent = data[0][0][0];
+        } catch(e){ captionDiv.textContent = ch.name; }
+      }
     };
     channelList.appendChild(li);
   });
@@ -337,8 +263,7 @@ function renderChannels(){
   document.getElementById("loadMore").style.display = index>=filteredChannels.length?"none":"inline-block";
 }
 
-// Search
-searchInput.addEventListener("input",()=>{
+searchInput.addEventListener("input", ()=>{
   const q = searchInput.value.toLowerCase();
   index = 0;
   channelList.innerHTML = "";
@@ -347,24 +272,34 @@ searchInput.addEventListener("input",()=>{
   renderChannels();
 });
 
-// Load more
 document.getElementById("loadMore").addEventListener("click",renderChannels);
 
-// Translator change
-translatorSelect.addEventListener("change",()=>{
-  // In this example, we just mock translations with the language code
-  filteredChannels.forEach(ch=>{
+translatorSelect.addEventListener("change", ()=>{
+  Array.from(channelList.children).forEach(async (li,i)=>{
+    const ch = filteredChannels[i];
     const lang = translatorSelect.value;
-    if(lang==="original") ch.translations[lang] = ch.name;
-    else ch.translations[lang] = `${ch.name} (${lang})`; // replace with actual translation if available
+    const nameDiv = li.querySelector(".channel-name");
+    if(lang==="original") nameDiv.textContent = ch.name;
+    else {
+      try{
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(ch.name)}`);
+        const data = await res.json();
+        nameDiv.textContent = data[0][0][0];
+      }catch(e){ nameDiv.textContent = ch.name; }
+    }
   });
-  channelList.innerHTML = "";
-  index = 0;
-  renderChannels();
-  // update caption
   if(player.src){
     const playing = filteredChannels.find(c=>c.url===player.src);
-    if(playing) captionDiv.textContent = playing.translations[translatorSelect.value];
+    if(playing){
+      const lang = translatorSelect.value;
+      if(lang==="original") captionDiv.textContent = playing.name;
+      else {
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(playing.name)}`)
+        .then(res=>res.json())
+        .then(data=>captionDiv.textContent = data[0][0][0])
+        .catch(()=> captionDiv.textContent = playing.name);
+      }
+    }
   }
 });
 </script>
