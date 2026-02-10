@@ -216,7 +216,10 @@ fetch(playlistURL)
         current = {};
         const nameMatch = line.match(/,(.*)$/);
         current.name = nameMatch ? nameMatch[1].trim() : "Unnamed";
+        current.logo = ""; // default empty
         current.translations = {};
+        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+        current.logo = logoMatch ? logoMatch[1] : "";
       } else if(!line.startsWith("#")){
         current.url = line;
         channels.push(current);
@@ -227,14 +230,15 @@ fetch(playlistURL)
     renderChannels();
   });
 
-function renderChannels(){
-  const nextBatch = filteredChannels.slice(index, index+PAGE_SIZE);
-  nextBatch.forEach(ch=>{
+function renderChannels() {
+  const nextBatch = filteredChannels.slice(index, index + PAGE_SIZE);
+  nextBatch.forEach(ch => {
     const li = document.createElement("li");
+
     const img = document.createElement("img");
     img.className = "logo";
-    img.src = ch.logo || "https://via.placeholder.com/48?text=TV";
-    img.onerror = ()=> img.src = "https://via.placeholder.com/48?text=TV";
+    img.src = ch.logo && ch.logo.trim() !== "" ? ch.logo : "https://via.placeholder.com/48?text=TV";
+    img.onerror = () => { img.src = "https://via.placeholder.com/48?text=TV"; };
 
     const name = document.createElement("div");
     name.className = "channel-name";
@@ -243,7 +247,7 @@ function renderChannels(){
     li.appendChild(img);
     li.appendChild(name);
 
-    li.onclick = async ()=>{
+    li.onclick = async () => {
       player.src = ch.url;
       player.autoplay = true;
       player.play();
@@ -257,10 +261,11 @@ function renderChannels(){
         } catch(e){ captionDiv.textContent = ch.name; }
       }
     };
+
     channelList.appendChild(li);
   });
   index += PAGE_SIZE;
-  document.getElementById("loadMore").style.display = index>=filteredChannels.length?"none":"inline-block";
+  document.getElementById("loadMore").style.display = index >= filteredChannels.length ? "none" : "inline-block";
 }
 
 searchInput.addEventListener("input", ()=>{
