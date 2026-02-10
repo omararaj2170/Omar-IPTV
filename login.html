@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Omar's IPTV</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  #loginContainer {
+    background: #1e1e1e;
+    padding: 30px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 0 10px #00ccff;
+  }
+
+  h2 {
+    text-align: center;
+    color: #00ccff;
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: none;
+    background: #121212;
+    color: #eee;
+    font-size: 16px;
+  }
+
+  button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: #00ccff;
+    color: #121212;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #00aacc;
+  }
+
+  .toggle {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+  }
+
+  .toggle span {
+    color: #00ccff;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .message {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #ff5555;
+  }
+</style>
+</head>
+<body>
+
+<div id="loginContainer">
+  <h2 id="formTitle">Sign In</h2>
+
+  <form id="loginForm">
+    <label for="userInput">Phone / Email / Username</label>
+    <input type="text" id="userInput" placeholder="Enter your info" required>
+
+    <label for="passwordInput">Password</label>
+    <input type="password" id="passwordInput" placeholder="Enter your password" required>
+
+    <button type="submit" id="submitButton">Sign In</button>
+  </form>
+
+  <div class="toggle">
+    Don't have an account? <span id="toggleForm">Sign Up</span>
+  </div>
+
+  <div class="message" id="message"></div>
+</div>
+
+<script>
+const loginForm = document.getElementById("loginForm");
+const formTitle = document.getElementById("formTitle");
+const submitButton = document.getElementById("submitButton");
+const toggleForm = document.getElementById("toggleForm");
+const messageDiv = document.getElementById("message");
+
+let isSignUp = false;
+
+// Toggle between Sign In / Sign Up
+toggleForm.addEventListener("click", () => {
+  isSignUp = !isSignUp;
+  messageDiv.textContent = "";
+  if (isSignUp) {
+    formTitle.textContent = "Sign Up";
+    submitButton.textContent = "Sign Up";
+    toggleForm.textContent = "Sign In";
+  } else {
+    formTitle.textContent = "Sign In";
+    submitButton.textContent = "Sign In";
+    toggleForm.textContent = "Sign Up";
+  }
+});
+
+// Submit handler
+loginForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const user = document.getElementById("userInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
+
+  if (!user || !password) {
+    messageDiv.textContent = "Please fill in all fields!";
+    return;
+  }
+
+  // Load accounts from localStorage
+  let accounts = JSON.parse(localStorage.getItem("accounts") || "{}");
+
+  if (isSignUp) {
+    if (accounts[user]) {
+      messageDiv.textContent = "User already exists!";
+      return;
+    }
+    accounts[user] = password;
+    localStorage.setItem("accounts", JSON.stringify(accounts));
+    messageDiv.style.color = "#00ff88";
+    messageDiv.textContent = "Sign Up successful! You can now Sign In.";
+    // auto switch to sign in
+    setTimeout(() => { toggleForm.click(); }, 1500);
+  } else {
+    if (accounts[user] && accounts[user] === password) {
+      messageDiv.style.color = "#00ff88";
+      messageDiv.textContent = "Sign In successful! Redirecting...";
+      // Here you can redirect to your main IPTV page
+      setTimeout(() => { window.location.href = "index.html"; }, 1000);
+    } else {
+      messageDiv.style.color = "#ff5555";
+      messageDiv.textContent = "Invalid username or password!";
+    }
+  }
+
+  loginForm.reset();
+});
+</script>
+
+</body>
+</html>
