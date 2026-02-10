@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login / Sign Up</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#121212; color:#eee; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
+  body { font-family: Arial,sans-serif; background:#121212; color:#eee; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
   h1 { color:#00ccff; }
   form { display:flex; flex-direction:column; gap:10px; background:#1e1e1e; padding:20px; border-radius:6px; }
   input { padding:10px; border-radius:6px; border:none; font-size:16px; }
@@ -19,22 +19,23 @@
 
 <form id="authForm">
   <input type="text" id="username" placeholder="Username" required>
-  <input type="email" id="email" placeholder="Email" required>
+  <input type="email" id="email" placeholder="Email">
   <input type="tel" id="phone" placeholder="Phone number">
   <input type="password" id="password" placeholder="Password" required>
-  <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+  <input type="password" id="confirmPassword" placeholder="Confirm Password">
   <button type="submit" id="submitBtn">Sign Up</button>
 </form>
+
 <div class="toggle" id="toggleMode">Already have an account? Sign In</div>
 
 <script>
 let isSignUp = true;
+
 const authForm = document.getElementById("authForm");
 const toggleMode = document.getElementById("toggleMode");
 const submitBtn = document.getElementById("submitBtn");
 
-toggleMode.addEventListener("click",()=>{
-  isSignUp = !isSignUp;
+function updateFormMode(){
   if(isSignUp){
     submitBtn.textContent = "Sign Up";
     toggleMode.textContent = "Already have an account? Sign In";
@@ -48,9 +49,16 @@ toggleMode.addEventListener("click",()=>{
     authForm.phone.style.display = "none";
     authForm.confirmPassword.style.display = "none";
   }
+}
+
+toggleMode.addEventListener("click",()=>{
+  isSignUp = !isSignUp;
+  updateFormMode();
 });
 
-authForm.addEventListener("submit",e=>{
+updateFormMode();
+
+authForm.addEventListener("submit", e=>{
   e.preventDefault();
   const username = authForm.username.value.trim();
   const email = authForm.email.value.trim();
@@ -58,29 +66,22 @@ authForm.addEventListener("submit",e=>{
   const password = authForm.password.value.trim();
   const confirmPassword = authForm.confirmPassword.value.trim();
 
+  const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
+
   if(isSignUp){
-    if(password !== confirmPassword){
-      alert("Passwords do not match");
-      return;
-    }
-    // save to localStorage
-    const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
-    if(users[username]){
-      alert("Username already exists");
-      return;
-    }
+    if(!username || !password || !confirmPassword) return alert("Please fill required fields");
+    if(password !== confirmPassword) return alert("Passwords do not match");
+    if(users[username]) return alert("Username already exists");
+
     users[username] = {email, phone, password};
     localStorage.setItem("iptvUsers", JSON.stringify(users));
     localStorage.setItem("iptvUsername", username); // auto-login
     alert("Sign Up successful!");
     window.location.href = "index.html";
   } else {
-    // Sign In
-    const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
-    if(!users[username] || users[username].password !== password){
-      alert("Invalid username or password");
-      return;
-    }
+    if(!username || !password) return alert("Please fill required fields");
+    if(!users[username] || users[username].password !== password) return alert("Invalid username or password");
+
     localStorage.setItem("iptvUsername", username);
     alert("Sign In successful!");
     window.location.href = "index.html";
