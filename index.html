@@ -204,6 +204,99 @@ searchInput.addEventListener("input", () => {
   renderChannels(filtered);
 });
 </script>
+<script>
+// Authentication and Last Viewed Channel
+const authForm = document.getElementById('auth-form');
+const loggedInDiv = document.getElementById('logged-in');
+const userNameSpan = document.getElementById('user-name');
+const lastChannelSpan = document.getElementById('last-channel');
+const logoutBtn = document.getElementById('logout');
+const channelBtns = document.querySelectorAll('.channel-btn');
+const languageSelect = document.getElementById('language-select');
+const translateBtn = document.getElementById('translate-btn');
+
+// Helper to update user interface
+function updateUserUI(userData) {
+    if (userData) {
+        authForm.style.display = 'none';
+        loggedInDiv.style.display = 'block';
+        userNameSpan.textContent = userData.username;
+        lastChannelSpan.textContent = userData.lastChannel || 'No channels yet';
+    }
+}
+
+// Initialize UI with existing user info
+const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+if (currentUser) {
+    updateUserUI(currentUser);
+}
+
+// Handle account creation and login
+authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    let users = JSON.parse(localStorage.getItem('users')) || {};
+    if (!users[username]) {
+        // Create new account
+        users[username] = { password, lastChannel: '' };
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Account created successfully!');
+    } else if (users[username].password !== password) {
+        alert('Incorrect password!');
+        return;
+    }
+
+    // Log in the user and save session
+    localStorage.setItem('currentUser', JSON.stringify({ username, lastChannel: users[username].lastChannel }));
+    updateUserUI({ username, lastChannel: users[username].lastChannel });
+});
+
+// Handle logout
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('currentUser');
+    authForm.style.display = 'block';
+    loggedInDiv.style.display = 'none';
+});
+
+// Save and display last viewed channel
+channelBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+        const channel = e.target.dataset.channel;
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser) {
+            const users = JSON.parse(localStorage.getItem('users'));
+            users[currentUser.username].lastChannel = channel;
+            localStorage.setItem('users', JSON.stringify(users));
+
+            currentUser.lastChannel = channel;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            lastChannelSpan.textContent = channel;
+            alert(`Now watching ${channel}`);
+        } else {
+            alert('Please log in first!');
+        }
+    });
+});
+
+// Translate the page
+translateBtn.addEventListener('click', () => {
+    const language = languageSelect.value;
+    const elements = document.body.querySelectorAll('*');
+    elements.forEach((element) => {
+        if (element.innerText) {
+            fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(element.innerText)}&langpair=en|${language}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.responseData.translatedText) {
+                        element.innerText = data.responseData.translatedText;
+                    }
+                }).catch((err) => console.error('Translation error:', err));
+        }
+    });
+});
+</script>
 
 </body>
 </html>
