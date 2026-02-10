@@ -21,9 +21,10 @@
   #menu { position:fixed; top:10px; right:20px; background:#1e1e1e; padding:10px 15px; border-radius:6px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; font-size:16px; z-index:9999; min-width:180px; }
   #menu-top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   #menu a { color:#00ccff; text-decoration:none; cursor:pointer; }
-  .credits div { display:flex; align-items:center; gap:5px; font-size:12px; color:#888; flex-wrap:wrap; }
-  .credits img { height:16px; }
+  .credits { font-size:12px; color:#888; line-height:1.4; }
   #loadMore { margin:20px; padding:10px 20px; font-size:16px; cursor:pointer; border:none; border-radius:6px; background:#00ccff; color:#000; }
+  /* Captions styling */
+  track { display:none; }
 </style>
 </head>
 <body>
@@ -37,14 +38,16 @@
     <a id="signInLink" href="login.html">Sign In</a> / <a id="signUpLink" href="login.html">Sign Up</a>
   </div>
   <div class="credits">
-    <div><img src="google.png" alt="Google"> Powered by Google Translate</div>
-    <div><img src="github.png" alt="GitHub"> Powered by GitHub Pages</div>
+    Powered by Google Translate<br>
+    Powered by GitHub Pages
   </div>
 </div>
 
 <div id="container">
-  <!-- IPTV player -->
-  <video id="player" controls autoplay></video>
+  <!-- IPTV player with captions -->
+  <video id="player" controls autoplay>
+    <track id="captionsTrack" kind="subtitles" label="Captions" srclang="en" default>
+  </video>
 
   <!-- Search + Translator -->
   <div id="searchContainer">
@@ -170,6 +173,7 @@
 const playlistURL="playlist.m3u";
 const channelList=document.getElementById("channelList");
 const player=document.getElementById("player");
+const captionsTrack=document.getElementById("captionsTrack");
 const searchInput=document.getElementById("search");
 const translatorSelect=document.getElementById("translatorSelect");
 const loadMoreBtn=document.getElementById("loadMore");
@@ -225,11 +229,19 @@ function renderChannels(filteredList){
     name.className="channel-name";
     name.dataset.original=ch.name;
 
-    translateText(ch.name,currentLang).then(translated=>{ name.textContent=translated; });
+    translateText(ch.name,currentLang).then(translated=>{
+      name.textContent=translated;
+      captionsTrack.innerHTML=`<track kind="subtitles" srclang="${currentLang}" label="Captions" default srcdoc="${translated}">`;
+    });
 
     li.appendChild(img);
     li.appendChild(name);
-    li.onclick=()=>{player.src=ch.url; player.play();}
+    li.onclick=()=>{
+      player.src=ch.url;
+      player.play();
+      // Update captions
+      captionsTrack.innerHTML=`<track kind="subtitles" srclang="${currentLang}" label="Captions" default srcdoc="${name.textContent}">`;
+    }
     channelList.appendChild(li);
   });
   index+=10;
