@@ -1,5 +1,5 @@
 # Omar-IPTV
-This is the repo For Omar-IPTV.
+This is the official repo For Omar-IPTV.
 
 # Here we have 10000 Channels and we have a link to watch our iptv for FREE
 
