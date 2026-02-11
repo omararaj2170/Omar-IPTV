@@ -12,3 +12,6 @@ https://raw.githubusercontent.com/omararaj2170/Omar-IPTV/refs/heads/main/playlis
 # Contribuitors
 
 omararaj2170
+
+©️ 2026 Omar Araj. All rights reserved.
+
