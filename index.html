@@ -3,27 +3,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Omar's IPTV Redirect</title>
+<title>Omar's IPTV – Redirecting</title>
+
+<style>
+body {
+  background:#121212;
+  color:#eee;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+  font-family:Arial, sans-serif;
+}
+
+h1 {
+  font-size:22px;
+  margin-bottom:20px;
+  text-align:center;
+}
+
+.loader {
+  width:300px;
+  height:12px;
+  background:#1e1e1e;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.bar {
+  height:100%;
+  width:0%;
+  background:#00ccff;
+  animation: loading 2s linear forwards;
+}
+
+@keyframes loading {
+  from { width:0%; }
+  to { width:100%; }
+}
+
+.small {
+  margin-top:15px;
+  font-size:14px;
+  color:#aaa;
+}
+</style>
+
 <script>
-// Device detection
 function redirectDevice() {
   const ua = navigator.userAgent.toLowerCase();
 
-  const isAndroidTV = ua.includes('android') && ua.includes('tv');
-  const isSmartTV = ua.includes('smart-tv') || ua.includes('hbbtv') || ua.includes('netcast') || ua.includes('tizen') || ua.includes('webos') || ua.includes('appletv');
-  const isCarScreen = ua.includes('androidauto') || ua.includes('carplay');
+  /* =========================
+     📺 SMART TV PLATFORMS
+     ========================= */
+  const isTV =
+    (ua.includes("android") && ua.includes("tv")) ||
+    ua.includes("google tv") ||
+    ua.includes("chromecast") ||
+    ua.includes("appletv") ||
+    ua.includes("tizen") ||
+    ua.includes("orsay") ||
+    ua.includes("webos") ||
+    ua.includes("netcast") ||
+    ua.includes("aft") ||
+    ua.includes("fire tv") ||
+    ua.includes("roku") ||
+    ua.includes("vidaa") ||
+    ua.includes("mitv") ||
+    ua.includes("patchwall") ||
+    ua.includes("miui tv") ||
+    ua.includes("bravia") ||
+    ua.includes("my homescreen") ||
+    ua.includes("firefox") ||
+    ua.includes("saphi") ||
+    ua.includes("aquos") ||
+    ua.includes("smartcast") ||
+    ua.includes("sky") ||
+    ua.includes("rdk") ||
+    ua.includes("x1") ||
+    ua.includes("hbbtv") ||
+    ua.includes("opentv") ||
+    ua.includes("enigma2") ||
+    ua.includes("playstation") ||
+    ua.includes("xbox");
 
-  if(isAndroidTV || isSmartTV || isCarScreen) {
-    window.location.href = "tv.html"; // Redirect to TV layout
-  } else {
-    window.location.href = "Desktop&mobile.html"; // Redirect to desktop & mobile layout
-  }
+  /* =========================
+     📱 SMARTPHONES
+     ========================= */
+  const isPhone =
+    ua.includes("iphone") ||
+    ua.includes("ipod") ||
+    ua.includes("android") ||
+    ua.includes("ios") ||
+    ua.includes("harmonyos") ||
+    ua.includes("kaios") ||
+    ua.includes("sailfish") ||
+    ua.includes("ubuntu touch") ||
+    ua.includes("postmarketos") ||
+    ua.includes("mobian") ||
+    ua.includes("plasma mobile") ||
+    ua.includes("windows phone") ||
+    ua.includes("symbian") ||
+    ua.includes("blackberry") ||
+    ua.includes("bb10") ||
+    ua.includes("bada") ||
+    ua.includes("meego") ||
+    ua.includes("maemo") ||
+    ua.includes("firefox os") ||
+    ua.includes("lineage") ||
+    ua.includes("graphene") ||
+    ua.includes("calyx") ||
+    ua.includes("oxygenos") ||
+    ua.includes("one ui") ||
+    ua.includes("coloros") ||
+    ua.includes("funtouch") ||
+    ua.includes("hios") ||
+    ua.includes("originos") ||
+    ua.includes("hyperos") ||
+    ua.includes("fuchsia");
+
+  /* =========================
+     💻 DESKTOP / LAPTOP OS
+     ========================= */
+  const isDesktop =
+    ua.includes("windows nt") ||
+    ua.includes("macintosh") ||
+    ua.includes("mac os x") ||
+    ua.includes("linux") ||
+    ua.includes("x11") ||
+    ua.includes("cros") ||        // ChromeOS
+    ua.includes("bsd") ||
+    ua.includes("unix");
+
+  setTimeout(() => {
+    if (isTV && !isPhone) {
+      window.location.href = "tv.html";
+    } else {
+      // Phones + Desktops + Laptops
+      window.location.href = "Desktop&mobile.html";
+    }
+  }, 2000);
 }
 
 window.onload = redirectDevice;
 </script>
 </head>
-<body style="background:#121212; color:#eee; display:flex; justify-content:center; align-items:center; height:100vh; font-family:Arial,sans-serif;">
-<h1>Redirecting you to the best layout for your device...</h1>
+
+<body>
+  <h1>Redirecting you to the best layout for your device…</h1>
+  <div class="loader">
+    <div class="bar"></div>
+  </div>
+  <div class="small">Please wait</div>
 </body>
 </html>
