@@ -90,13 +90,14 @@ function redirectDevice() {
     ua.includes("xbox");
 
   /* =========================
-     📱 SMARTPHONES
+     📱 MOBILE DEVICES
      ========================= */
-  const isPhone =
+  const isMobile =
     ua.includes("iphone") ||
     ua.includes("ipod") ||
-    ua.includes("android") ||
-    ua.includes("ios") ||
+    (ua.includes("android") && !ua.includes("tv")) ||
+    ua.includes("ipad") ||
+    ua.includes("mobile") ||
     ua.includes("harmonyos") ||
     ua.includes("kaios") ||
     ua.includes("sailfish") ||
@@ -107,25 +108,10 @@ function redirectDevice() {
     ua.includes("windows phone") ||
     ua.includes("symbian") ||
     ua.includes("blackberry") ||
-    ua.includes("bb10") ||
-    ua.includes("bada") ||
-    ua.includes("meego") ||
-    ua.includes("maemo") ||
-    ua.includes("firefox os") ||
-    ua.includes("lineage") ||
-    ua.includes("graphene") ||
-    ua.includes("calyx") ||
-    ua.includes("oxygenos") ||
-    ua.includes("one ui") ||
-    ua.includes("coloros") ||
-    ua.includes("funtouch") ||
-    ua.includes("hios") ||
-    ua.includes("originos") ||
-    ua.includes("hyperos") ||
-    ua.includes("fuchsia");
+    ua.includes("bb10");
 
   /* =========================
-     💻 DESKTOP / LAPTOP OS
+     💻 DESKTOP / LAPTOP
      ========================= */
   const isDesktop =
     ua.includes("windows nt") ||
@@ -138,19 +124,23 @@ function redirectDevice() {
     ua.includes("unix");
 
   setTimeout(() => {
-    if (isTV && !isPhone) {
+    if (isTV) {
       window.location.href = "tv.html";
-    } else {
-      // Phones + Desktops + Laptops
+    } else if (isMobile) {
+      window.location.href = "mobile.html";
+    } else if (isDesktop) {
       window.location.href = "Desktop&mobile.html";
+    } else {
+      // fallback
+      window.location.href = "index.html";
     }
   }, 2000);
 }
 
 window.onload = redirectDevice;
 </script>
-</head>
 
+</head>
 <body>
   <h1>Redirecting you to the best layout for your device…</h1>
   <div class="loader">
