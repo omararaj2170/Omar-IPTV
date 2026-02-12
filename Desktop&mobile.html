@@ -146,6 +146,11 @@ select{background:#00ccff;color:black;}
   color:gold;
   cursor:pointer;
 }
+
+#loadMoreBtn{
+  display:none;
+  margin:20px auto;
+}
 </style>
 </head>
 <body>
@@ -192,6 +197,10 @@ select{background:#00ccff;color:black;}
 <input type="text" id="search" placeholder="Search channels...">
 <ul id="channelList"></ul>
 
+<div style="text-align:center;">
+<button id="loadMoreBtn">Load More</button>
+</div>
+
 </div>
 </div>
 
@@ -207,10 +216,15 @@ const favoritesList=document.getElementById("favorites");
 const categoriesList=document.getElementById("categories");
 const buffering=document.getElementById("buffering");
 const qualitySelect=document.getElementById("qualitySelect");
+const loadMoreBtn=document.getElementById("loadMoreBtn");
 
 let currentHls;
 let channels=[];
 let categories={};
+
+let visibleChannels=[];
+let currentIndex=0;
+const batchSize=25;
 
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
 let lastWatched=JSON.parse(localStorage.getItem("lastWatched")||"[]");
@@ -219,6 +233,40 @@ document.getElementById("menuBtn").onclick=()=>{
   sidebar.classList.toggle("active");
   main.classList.toggle("shift");
 };
+
+/* LOAD MORE SYSTEM */
+function renderChannels(list){
+  visibleChannels=list;
+  currentIndex=0;
+  channelList.innerHTML="";
+  loadMoreBtn.style.display="block";
+  loadNextBatch();
+}
+
+function loadNextBatch(){
+  const nextBatch=visibleChannels.slice(currentIndex,currentIndex+batchSize);
+
+  nextBatch.forEach(ch=>{
+    const li=document.createElement("li");
+    li.innerHTML=`${ch.name} <span class="favBtn">★</span>`;
+    li.onclick=()=>playStream(ch.url,ch.name);
+
+    li.querySelector(".favBtn").onclick=(e)=>{
+      e.stopPropagation();
+      toggleFavorite(ch.name,ch.url);
+    };
+
+    channelList.appendChild(li);
+  });
+
+  currentIndex+=batchSize;
+
+  if(currentIndex>=visibleChannels.length){
+    loadMoreBtn.style.display="none";
+  }
+}
+
+loadMoreBtn.addEventListener("click",loadNextBatch);
 
 /* HLS + QUALITY */
 function playStream(url,name){
@@ -303,7 +351,7 @@ function renderFavorites(){
   });
 }
 
-/* LOAD PLAYLIST WITH CATEGORIES */
+/* LOAD PLAYLIST */
 fetch(playlistURL)
 .then(r=>r.text())
 .then(text=>{
@@ -336,20 +384,7 @@ fetch(playlistURL)
   renderCategories();
 });
 
-function renderChannels(list){
-  channelList.innerHTML="";
-  list.forEach(ch=>{
-    const li=document.createElement("li");
-    li.innerHTML=`${ch.name} <span class="favBtn">★</span>`;
-    li.onclick=()=>playStream(ch.url,ch.name);
-    li.querySelector(".favBtn").onclick=(e)=>{
-      e.stopPropagation();
-      toggleFavorite(ch.name,ch.url);
-    };
-    channelList.appendChild(li);
-  });
-}
-
+/* CATEGORIES */
 function renderCategories(){
   categoriesList.innerHTML="";
 
