@@ -295,6 +295,55 @@ function playChannel(channel) {
     player.src = url;
     player.play().catch(() => {});
   }
+
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    const nameNodes = [];
+
+    nextItems.forEach((ch) => {
+      const li = document.createElement("li");
+      li.tabIndex = 0;
+
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
+      img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = ch.name;
+      nameNodes.push({ node: name, rawName: ch.name });
+
+      li.append(img, name);
+
+      li.addEventListener("click", async () => {
+        playChannel(ch);
+        caption.textContent = await translate(ch.name);
+        sidebar.classList.remove("open");
+      });
+
+      channelList.appendChild(li);
+    });
+
+    Promise.all(nameNodes.map(item => translate(item.rawName))).then(translated => {
+      translated.forEach((label, idx) => {
+        nameNodes[idx].node.textContent = label || nameNodes[idx].rawName;
+      });
+    });
+
+    loadingHint.textContent = renderedCount < filtered.length
+      ? `Loaded ${renderedCount} / ${filtered.length} channels`
+      : "No more channels";
+  } finally {
+    isRenderingBatch = false;
+  }
+
+  renderedCount += nextItems.length;
+  loadingHint.textContent = renderedCount < filtered.length
+    ? `Loaded ${renderedCount} / ${filtered.length} channels`
+    : "No more channels";
 }
 
 async function renderNextBatch() {
