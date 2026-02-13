@@ -1,0 +1,172 @@
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f0f0f;
+  color:white;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  align-items:center;
+  padding:10px 15px;
+  background:#141414;
+  flex-wrap:wrap;
+}
+
+#menuBtn{
+  font-size:24px;
+  cursor:pointer;
+  margin-right:10px;
+}
+
+h1{
+  margin:0;
+  color:#00ccff;
+  font-size:18px;
+  flex:1;
+  text-align:center;
+}
+
+#translatorBar{
+  margin-top:10px;
+  width:100%;
+  background:#1f1f1f;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+}
+
+/* LAYOUT */
+#layout{display:flex; flex-direction:row; flex-wrap:wrap;}
+
+#sidebar{
+  width:80%;
+  max-width:250px;
+  background:#181818;
+  height:100vh;
+  position:fixed;
+  left:-100%;
+  transition:0.3s;
+  padding:15px;
+  overflow-y:auto;
+  z-index:1000;
+}
+
+#sidebar.active{left:0;}
+
+.sidebar-section{margin-bottom:25px;}
+
+.sidebar-section h3{
+  color:#00ccff;
+  margin-bottom:10px;
+}
+
+.sidebar-section ul{
+  list-style:none;
+  padding:0;
+}
+
+.sidebar-section li{
+  padding:8px 0;
+  cursor:pointer;
+  border-bottom:1px solid #333;
+}
+
+#main{
+  flex:1;
+  padding:15px;
+  transition:0.3s;
+  margin-left:0;
+}
+
+#main.shift{margin-left:80%;}
+
+/* PLAYER */
+#playerContainer{
+  max-width:100%;
+  margin:auto;
+}
+
+video{
+  width:100%;
+  border-radius:8px;
+  background:black;
+}
+
+/* SEARCH */
+#search{
+  width:100%;
+  margin:15px auto;
+  display:block;
+  padding:10px;
+  border-radius:6px;
+  border:none;
+  font-size:14px;
+  background:#1f1f1f;
+  color:white;
+}
+
+/* GRID */
+#channelGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:12px;
+  margin:auto;
+}
+
+.channelCard{
+  background:#1b1b1b;
+  border-radius:6px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:0.3s;
+  position:relative;
+}
+
+.channelCard:hover{
+  transform:scale(1.03);
+  box-shadow:0 5px 15px rgba(0,0,0,0.6);
+}
+
+.channelCard img{
+  width:100%;
+  height:100px;
+  object-fit:contain;
+  background:black;
+}
+
+.channelName{
+  padding:6px;
+  font-size:12px;
+  text-align:center;
+}
+
+.favBtn{
+  position:absolute;
+  top:5px;
+  right:5px;
+  font-size:16px;
+  color:gold;
+  cursor:pointer;
+}
+
+/* LOAD MORE */
+#loadMoreBtn{
+  display:none;
+  margin:20px auto;
+  padding:8px 15px;
+  border:none;
+  border-radius:6px;
+  background:#ff9800;
+  cursor:pointer;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:10px;
+  font-size:12px;
+  color:#aaa;
+}

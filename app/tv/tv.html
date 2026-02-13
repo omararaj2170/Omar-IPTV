@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../favicon.ico" type="image/x-icon">
+<title>Omar's IPTV – TV</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<link rel="stylesheet" href="tv.css">
+
+</head>
+<body>
+
+<video id="player" autoplay controls></video>
+<div id="caption"></div>
+<button id="sidebarToggle" aria-label="Open channels">📺 Channels</button>
+
+<aside id="sidebar" class="open">
+  <div id="sidebarHeader">
+    <input id="search" placeholder="Search channels">
+    <select id="language"></select>
+  </div>
+  <ul id="channelList"></ul>
+  <div id="loadingHint">Scroll to load more channels</div>
+</aside>
+
+<script src="tv.js"></script>
+
+</body>
+</html>
