@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Omar IPTV Pro</title>
@@ -397,9 +397,13 @@ function loadNextBatch(){
       <img src="${ch.logo || 'https://via.placeholder.com/300x150'}"
            loading="lazy"
            onerror="this.src='https://via.placeholder.com/300x150'">
-      <div class="channelName">${getLabel(ch.name)}</div>
+      <div class="channelName">${ch.name}</div>
       <div class="favBtn">★</div>
     `;
+    const channelNameNode=card.querySelector(".channelName");
+    translateText(ch.name).then(translated=>{
+      channelNameNode.textContent=translated;
+    });
     card.onclick=()=>playStream(ch.url);
     card.querySelector(".favBtn").onclick=(e)=>{
       e.stopPropagation();
@@ -443,7 +447,11 @@ function renderFavorites(){
   favoritesList.innerHTML="";
   favorites.forEach(c=>{
     const li=document.createElement("li");
-    li.innerHTML=`<span>${getLabel(c.name)}</span>`;
+    li.innerHTML=`<span>${c.name}</span>`;
+    const favNameNode=li.querySelector("span");
+    translateText(c.name).then(translated=>{
+      favNameNode.textContent=translated;
+    });
     li.onclick=()=>renderChannels([c]);
     favoritesList.appendChild(li);
   });
@@ -478,7 +486,11 @@ function renderCategories(){
   categoriesList.innerHTML="";
   Object.keys(categories).forEach(cat=>{
     const li=document.createElement("li");
-    li.innerHTML = `<span>${getLabel(cat)}</span>`;
+    li.innerHTML = `<span>${cat}</span>`;
+    const categoryNode=li.querySelector("span");
+    translateText(cat).then(translated=>{
+      categoryNode.textContent=translated;
+    });
     li.onclick=()=>renderChannels(categories[cat]);
     categoriesList.appendChild(li);
   });
@@ -491,11 +503,6 @@ searchInput.addEventListener("input",()=>{
 });
 
 renderFavorites();
-
-function getLabel(text){
-  if(!text) return "";
-  return selectedLanguage === "en" ? text : (translationCache[`${selectedLanguage}:${text}`] || text);
-}
 
 async function translateText(text){
   if(!text || selectedLanguage === "en") return text;
@@ -522,15 +529,8 @@ async function renderStaticText(){
 
 translatorBar.addEventListener("change", async (event)=>{
   selectedLanguage = event.target.value || "en";
-  const labels = [
-    "Omar IPTV Pro","Categories","Favorites","Search channels...","Load More",
-    "Powered by Google Translate · Hosted on GitHub Pages",
-    ...channels.map(c=>c.name),
-    ...Object.keys(categories),
-    ...favorites.map(c=>c.name)
-  ];
-  await Promise.all([...new Set(labels)].map(translateText));
   renderChannels(visibleChannels.length ? visibleChannels : channels);
+  renderCategories();
   renderFavorites();
   renderStaticText();
 });

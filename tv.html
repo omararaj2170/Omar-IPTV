@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" href="./favicon.ico" type="image/x-icon">
 <title>Omar's IPTV – TV</title>
 
 <style>
@@ -169,6 +169,7 @@ let channels = [];
 let filtered = [];
 let renderedCount = 0;
 let lang = "original";
+let isRenderingBatch = false;
 const translationCache = {};
 
 const languages = {
@@ -249,13 +250,19 @@ function parsePlaylist(text) {
 }
 
 async function renderNextBatch() {
+  if (isRenderingBatch) return;
+
   const nextItems = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
   if (!nextItems.length) {
     loadingHint.textContent = renderedCount ? "No more channels" : "No channels found";
     return;
   }
 
-  for (const ch of nextItems) {
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    for (const ch of nextItems) {
     const li = document.createElement("li");
     li.tabIndex = 0;
 
@@ -278,6 +285,13 @@ async function renderNextBatch() {
     });
 
     channelList.appendChild(li);
+    }
+
+    loadingHint.textContent = renderedCount < filtered.length
+      ? `Loaded ${renderedCount} / ${filtered.length} channels`
+      : "No more channels";
+  } finally {
+    isRenderingBatch = false;
   }
 
   renderedCount += nextItems.length;
@@ -288,6 +302,7 @@ async function renderNextBatch() {
 
 function resetAndRender() {
   renderedCount = 0;
+  isRenderingBatch = false;
   channelList.innerHTML = "";
   loadingHint.textContent = "Loading...";
   renderNextBatch();
