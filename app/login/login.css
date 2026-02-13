@@ -1,0 +1,7 @@
+body { font-family: Arial,sans-serif; background:#121212; color:#eee; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
+  h1 { color:#00ccff; }
+  form { display:flex; flex-direction:column; gap:10px; background:#1e1e1e; padding:20px; border-radius:6px; }
+  input { padding:10px; border-radius:6px; border:none; font-size:16px; }
+  button { padding:10px; border-radius:6px; border:none; background:#00ccff; color:#000; font-size:16px; cursor:pointer; }
+  .toggle { color:#00ccff; cursor:pointer; text-align:center; }
+  #status { min-height:20px; color:#9adfff; }

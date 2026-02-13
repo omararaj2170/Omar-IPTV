@@ -1,0 +1,185 @@
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f0f0f;
+  color:white;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  align-items:center;
+  padding:10px 15px;
+  background:#141414;
+  flex-wrap:wrap;
+}
+
+#menuBtn{
+  font-size:24px;
+  cursor:pointer;
+  margin-right:15px;
+}
+
+h1{
+  margin:0;
+  color:#00ccff;
+  font-size:20px;
+}
+
+#translatorBar{
+  margin-left:auto;
+  background:#1f1f1f;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+}
+
+/* LAYOUT */
+#layout{display:flex; flex-wrap:wrap;}
+
+#sidebar{
+  width:250px;
+  background:#181818;
+  height:100vh;
+  position:fixed;
+  left:-250px;
+  transition:0.3s;
+  padding:15px;
+  overflow-y:auto;
+  z-index:1000;
+}
+
+#sidebar.active{left:0;}
+
+.sidebar-section{margin-bottom:25px;}
+
+.sidebar-section h3{
+  color:#00ccff;
+  margin-bottom:10px;
+}
+
+.sidebar-section ul{
+  list-style:none;
+  padding:0;
+}
+
+.sidebar-section li{
+  padding:8px 0;
+  cursor:pointer;
+  border-bottom:1px solid #333;
+}
+
+#main{
+  flex:1;
+  padding:20px;
+  transition:0.3s;
+  margin-left:0;
+}
+
+#main.shift{margin-left:250px;}
+
+/* PLAYER */
+#playerContainer{
+  max-width:1000px;
+  margin:auto;
+}
+
+video{
+  width:100%;
+  border-radius:8px;
+  background:black;
+}
+
+/* SEARCH */
+#search{
+  width:100%;
+  max-width:1000px;
+  margin:20px auto;
+  display:block;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  font-size:16px;
+  background:#1f1f1f;
+  color:white;
+}
+
+/* GRID */
+#channelGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:18px;
+  max-width:1200px;
+  margin:auto;
+}
+
+.channelCard{
+  background:#1b1b1b;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:0.3s;
+  position:relative;
+}
+
+.channelCard:hover{
+  transform:scale(1.05);
+  box-shadow:0 8px 20px rgba(0,0,0,0.6);
+}
+
+.channelCard img{
+  width:100%;
+  height:120px;
+  object-fit:contain;
+  background:black;
+}
+
+.channelName{
+  padding:10px;
+  font-size:14px;
+  text-align:center;
+}
+
+.favBtn{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:18px;
+  color:gold;
+  cursor:pointer;
+}
+
+/* LOAD MORE */
+#loadMoreBtn{
+  display:none;
+  margin:30px auto;
+  padding:10px 20px;
+  border:none;
+  border-radius:6px;
+  background:#ff9800;
+  cursor:pointer;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:15px;
+  font-size:12px;
+  color:#aaa;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  #sidebar{
+    width:80%;
+    left:-80%;
+  }
+  #sidebar.active{left:0;}
+  #main.shift{margin-left:0;}
+  .channelCard img{
+    height:100px;
+  }
+  header{flex-direction:column; align-items:flex-start;}
+  #translatorBar{margin-left:0; margin-top:10px;}
+}
