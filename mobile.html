@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="shortcut icon" type="image/x-icon" href="{{ "/favicon.ico" | absolute_url }}">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Omar IPTV Pro - Mobile</title>
@@ -188,7 +188,7 @@ footer{
 
 <header>
   <div id="menuBtn">☰</div>
-  <h1>Omar IPTV Pro</h1>
+  <h1 id="siteTitle">Omar IPTV Pro</h1>
   <!-- Mobile Custom Translator Bar -->
   <select id="translatorBar">
     <option value="">🌐 Language</option>
@@ -307,12 +307,12 @@ footer{
 
 <div id="sidebar">
   <div class="sidebar-section">
-    <h3>Categories</h3>
+    <h3 id="categoriesTitle">Categories</h3>
     <ul id="categories"></ul>
   </div>
 
   <div class="sidebar-section">
-    <h3>Favorites</h3>
+    <h3 id="favoritesTitle">Favorites</h3>
     <ul id="favorites"></ul>
   </div>
 </div>
@@ -331,28 +331,9 @@ footer{
 </div>
 </div>
 
-<footer>
+<footer id="footerText">
 Powered by Google Translate · Hosted on GitHub Pages
 </footer>
-
-<!-- GOOGLE TRANSLATE -->
-<script>
-function googleTranslateElementInit() {
-    new google.translate.TranslateElement({pageLanguage:'en', autoDisplay:false});
-}
-
-function changeLanguage(lang) {
-    const combo = document.querySelector(".goog-te-combo");
-    if(!combo) return;
-    combo.value = lang;
-    combo.dispatchEvent(new Event("change"));
-}
-
-document.getElementById("translatorBar").addEventListener("change", e=>{
-    if(e.target.value) changeLanguage(e.target.value);
-});
-</script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <script>
 // IPTV Logic (same as desktop)
@@ -365,6 +346,7 @@ const main=document.getElementById("main");
 const categoriesList=document.getElementById("categories");
 const favoritesList=document.getElementById("favorites");
 const loadMoreBtn=document.getElementById("loadMoreBtn");
+const translatorBar=document.getElementById("translatorBar");
 
 let channels=[];
 let categories={};
@@ -372,6 +354,8 @@ let visibleChannels=[];
 let currentIndex=0;
 const batchSize=24;
 let favorites=JSON.parse(localStorage.getItem("favorites")||"[]");
+let selectedLanguage="en";
+const translationCache={};
 
 document.getElementById("menuBtn").onclick=()=>{
   sidebar.classList.toggle("active");
@@ -384,7 +368,7 @@ function renderChannels(list){
   grid.innerHTML="";
   loadMoreBtn.style.display="block";
   loadNextBatch();
-  retranslateDynamicContent();
+  renderStaticText();
 }
 
 function loadNextBatch(){
@@ -397,7 +381,7 @@ function loadNextBatch(){
       <img src="${ch.logo || 'https://via.placeholder.com/300x150'}"
            loading="lazy"
            onerror="this.src='https://via.placeholder.com/300x150'">
-      <div class="channelName translate">${ch.name}</div>
+      <div class="channelName">${getLabel(ch.name)}</div>
       <div class="favBtn">★</div>
     `;
     card.onclick=()=>playStream(ch.url);
@@ -412,7 +396,7 @@ function loadNextBatch(){
   if(currentIndex>=visibleChannels.length){
     loadMoreBtn.style.display="none";
   }
-  retranslateDynamicContent();
+  renderStaticText();
 }
 
 loadMoreBtn.onclick=loadNextBatch;
@@ -443,11 +427,11 @@ function renderFavorites(){
   favoritesList.innerHTML="";
   favorites.forEach(c=>{
     const li=document.createElement("li");
-    li.innerHTML=`<span class="translate">${c.name}</span>`;
+    li.innerHTML=`<span>${getLabel(c.name)}</span>`;
     li.onclick=()=>renderChannels([c]);
     favoritesList.appendChild(li);
   });
-  retranslateDynamicContent();
+  renderStaticText();
 }
 
 fetch(playlistURL)
@@ -478,11 +462,11 @@ function renderCategories(){
   categoriesList.innerHTML="";
   Object.keys(categories).forEach(cat=>{
     const li=document.createElement("li");
-    li.innerHTML=`<span class="translate">${cat}</span>`;
+    li.innerHTML=`<span>${getLabel(cat)}</span>`;
     li.onclick=()=>renderChannels(categories[cat]);
     categoriesList.appendChild(li);
   });
-  retranslateDynamicContent();
+  renderStaticText();
 }
 
 searchInput.addEventListener("input",()=>{
@@ -492,13 +476,49 @@ searchInput.addEventListener("input",()=>{
 
 renderFavorites();
 
-function retranslateDynamicContent(){
-  const combo = document.querySelector(".goog-te-combo");
-  if(combo){
-    const evt = document.createEvent("HTMLEvents");
-    evt.initEvent("change", true, true);
-    combo.dispatchEvent(evt);
+translatorBar.addEventListener("change", async (event)=>{
+  selectedLanguage = event.target.value || "en";
+  const labels = [
+    "Omar IPTV Pro","Categories","Favorites","Search channels...","Load More",
+    "Powered by Google Translate · Hosted on GitHub Pages",
+    ...channels.map(c=>c.name),
+    ...Object.keys(categories),
+    ...favorites.map(c=>c.name)
+  ];
+  await Promise.all([...new Set(labels)].map(translateText));
+  renderChannels(visibleChannels.length ? visibleChannels : channels);
+  renderFavorites();
+  renderStaticText();
+});
+
+renderStaticText();
+
+function getLabel(text){
+  if(!text) return "";
+  return selectedLanguage === "en" ? text : (translationCache[`${selectedLanguage}:${text}`] || text);
+}
+
+async function translateText(text){
+  if(!text || selectedLanguage === "en") return text;
+  const key = `${selectedLanguage}:${text}`;
+  if(translationCache[key]) return translationCache[key];
+  try {
+    const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${selectedLanguage}&dt=t&q=${encodeURIComponent(text)}`);
+    const data = await response.json();
+    translationCache[key] = data?.[0]?.map(row => row[0]).join("") || text;
+    return translationCache[key];
+  } catch {
+    return text;
   }
+}
+
+async function renderStaticText(){
+  document.getElementById("siteTitle").textContent = await translateText("Omar IPTV Pro");
+  document.getElementById("categoriesTitle").textContent = await translateText("Categories");
+  document.getElementById("favoritesTitle").textContent = await translateText("Favorites");
+  searchInput.placeholder = await translateText("Search channels...");
+  loadMoreBtn.textContent = await translateText("Load More");
+  document.getElementById("footerText").textContent = await translateText("Powered by Google Translate · Hosted on GitHub Pages");
 }
 </script>
 
