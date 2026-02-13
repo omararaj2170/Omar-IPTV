@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login / Sign Up</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
 <style>
   body { font-family: Arial,sans-serif; background:#121212; color:#eee; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
   h1 { color:#00ccff; }
@@ -11,11 +12,13 @@
   input { padding:10px; border-radius:6px; border:none; font-size:16px; }
   button { padding:10px; border-radius:6px; border:none; background:#00ccff; color:#000; font-size:16px; cursor:pointer; }
   .toggle { color:#00ccff; cursor:pointer; text-align:center; }
+  #status { min-height:20px; color:#9adfff; }
 </style>
 </head>
 <body>
 
 <h1>Login / Sign Up</h1>
+<p id="status"></p>
 
 <form id="authForm">
   <input type="text" id="username" placeholder="Username" required>
@@ -34,20 +37,26 @@ let isSignUp = true;
 const authForm = document.getElementById("authForm");
 const toggleMode = document.getElementById("toggleMode");
 const submitBtn = document.getElementById("submitBtn");
+const status = document.getElementById("status");
+const usernameInput = document.getElementById("username");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
 
 function updateFormMode(){
   if(isSignUp){
     submitBtn.textContent = "Sign Up";
     toggleMode.textContent = "Already have an account? Sign In";
-    authForm.email.style.display = "block";
-    authForm.phone.style.display = "block";
-    authForm.confirmPassword.style.display = "block";
+    emailInput.style.display = "block";
+    phoneInput.style.display = "block";
+    confirmPasswordInput.style.display = "block";
   } else {
     submitBtn.textContent = "Sign In";
     toggleMode.textContent = "Don't have an account? Sign Up";
-    authForm.email.style.display = "none";
-    authForm.phone.style.display = "none";
-    authForm.confirmPassword.style.display = "none";
+    emailInput.style.display = "none";
+    phoneInput.style.display = "none";
+    confirmPasswordInput.style.display = "none";
   }
 }
 
@@ -60,30 +69,31 @@ updateFormMode();
 
 authForm.addEventListener("submit", e=>{
   e.preventDefault();
-  const username = authForm.username.value.trim();
-  const email = authForm.email.value.trim();
-  const phone = authForm.phone.value.trim();
-  const password = authForm.password.value.trim();
-  const confirmPassword = authForm.confirmPassword.value.trim();
+  const username = usernameInput.value.trim();
+  const email = emailInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const password = passwordInput.value.trim();
+  const confirmPassword = confirmPasswordInput.value.trim();
+  status.textContent = "";
 
   const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
 
   if(isSignUp){
-    if(!username || !password || !confirmPassword) return alert("Please fill required fields");
-    if(password !== confirmPassword) return alert("Passwords do not match");
-    if(users[username]) return alert("Username already exists");
+    if(!username || !password || !confirmPassword) return status.textContent = "Please fill required fields";
+    if(password !== confirmPassword) return status.textContent = "Passwords do not match";
+    if(users[username]) return status.textContent = "Username already exists";
 
     users[username] = {email, phone, password};
     localStorage.setItem("iptvUsers", JSON.stringify(users));
     localStorage.setItem("iptvUsername", username); // auto-login
-    alert("Sign Up successful!");
+    status.textContent = "Sign Up successful! Redirecting...";
     window.location.href = "index.html";
   } else {
-    if(!username || !password) return alert("Please fill required fields");
-    if(!users[username] || users[username].password !== password) return alert("Invalid username or password");
+    if(!username || !password) return status.textContent = "Please fill required fields";
+    if(!users[username] || users[username].password !== password) return status.textContent = "Invalid username or password";
 
     localStorage.setItem("iptvUsername", username);
-    alert("Sign In successful!");
+    status.textContent = "Sign In successful! Redirecting...";
     window.location.href = "index.html";
   }
 });

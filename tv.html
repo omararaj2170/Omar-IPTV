@@ -3,131 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="./favicon.ico" type="image/x-icon">
 <title>Omar's IPTV – TV</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 html, body {
-  margin:0;
-  padding:0;
-  background:black;
-  color:white;
+  margin: 0;
+  padding: 0;
+  height: 100%;
   font-family: Arial, sans-serif;
-  height:100%;
-  overflow:hidden;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
 }
 
-/* VIDEO */
 #player {
-  position:fixed;
-  top:0; left:0;
-  width:100vw;
-  height:100vh;
-  background:black;
-  object-fit:contain;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  background: #000;
 }
 
-/* CAPTION */
 #caption {
-  position:fixed;
-  bottom:60px;
-  width:100%;
-  text-align:center;
-  font-size:22px;
-  text-shadow:2px 2px 5px black;
-  pointer-events:none;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 24px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  text-shadow: 0 1px 3px #000;
+  font-size: 18px;
+  max-width: 80vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* MENU */
-#menu {
-  position:fixed;
-  top:0;
-  right:-420px;
-  width:420px;
-  height:100%;
-  background:#111;
-  transition:right 0.3s ease;
-  overflow-y:auto;
-  padding:15px;
-  box-sizing:border-box;
+#sidebarToggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1200;
+  border: none;
+  border-radius: 8px;
+  background: rgba(20,20,20,0.92);
+  color: #fff;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 18px;
 }
 
-#menu.open { right:0; }
-
-#search {
-  width:100%;
-  padding:10px;
-  font-size:18px;
-  margin-bottom:10px;
-  border-radius:6px;
-  border:none;
+#sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(430px, 92vw);
+  height: 100%;
+  background: rgba(15, 15, 15, 0.96);
+  border-left: 1px solid #2b2b2b;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
 }
 
+#sidebar.open {
+  transform: translateX(0);
+}
+
+#sidebarHeader {
+  padding: 12px;
+  border-bottom: 1px solid #2b2b2b;
+  display: grid;
+  gap: 8px;
+}
+
+#search,
 #language {
-  width:100%;
-  padding:10px;
-  font-size:16px;
-  margin-bottom:10px;
-  border-radius:6px;
-  border:none;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 15px;
 }
 
 #channelList {
-  list-style:none;
-  padding:0;
-  margin:0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
 }
 
 #channelList li {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px;
-  border-bottom:1px solid #333;
-  cursor:pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #2b2b2b;
+  cursor: pointer;
 }
 
+#channelList li:hover,
 #channelList li:focus {
-  outline:none;
-  background:#222;
+  background: #222;
+  outline: none;
 }
 
 .logo {
-  width:48px;
-  height:48px;
-  object-fit:contain;
-  background:#000;
-  border-radius:6px;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: #000;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+#loadingHint {
+  text-align: center;
+  color: #bbb;
+  font-size: 13px;
+  padding: 12px;
 }
 </style>
 </head>
-
 <body>
 
 <video id="player" autoplay controls></video>
 <div id="caption"></div>
+<button id="sidebarToggle" aria-label="Open channels">📺 Channels</button>
 
-<div id="menu">
-  <input id="search" placeholder="Search channels">
-  <select id="language"></select>
+<aside id="sidebar" class="open">
+  <div id="sidebarHeader">
+    <input id="search" placeholder="Search channels">
+    <select id="language"></select>
+  </div>
   <ul id="channelList"></ul>
-</div>
+  <div id="loadingHint">Scroll to load more channels</div>
+</aside>
 
 <script>
-/* ====== DATA ====== */
 const playlistURL = "playlist.m3u";
 const player = document.getElementById("player");
-const menu = document.getElementById("menu");
-const channelList = document.getElementById("channelList");
-const searchInput = document.getElementById("search");
 const caption = document.getElementById("caption");
+const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
+const searchInput = document.getElementById("search");
 const languageSelect = document.getElementById("language");
+const channelList = document.getElementById("channelList");
+const loadingHint = document.getElementById("loadingHint");
 
+const BATCH_SIZE = 25;
 let channels = [];
 let filtered = [];
+let renderedCount = 0;
 let lang = "original";
-const cache = {};
+let isRenderingBatch = false;
+let hlsInstance = null;
+const translationCache = {};
+const translationInFlight = {};
 
-/* ====== LANGUAGES (HEBREW EXCLUDED) ====== */
 const languages = {
   original:"🌐 Original",
   af:"Afrikaans",sq:"Albanian",am:"Amharic",ar:"Arabic",hy:"Armenian",
@@ -136,106 +184,225 @@ const languages = {
   hr:"Croatian",cs:"Czech",da:"Danish",nl:"Dutch",en:"English",
   eo:"Esperanto",et:"Estonian",fi:"Finnish",fr:"French",fy:"Frisian",
   gl:"Galician",ka:"Georgian",de:"German",el:"Greek",gu:"Gujarati",
-  ht:"Haitian Creole",ha:"Hausa",haw:"Hawaiian",hi:"Hindi",
-  hmn:"Hmong",hu:"Hungarian",is:"Icelandic",ig:"Igbo",id:"Indonesian",
-  ga:"Irish",it:"Italian",ja:"Japanese",jw:"Javanese",kn:"Kannada",
-  kk:"Kazakh",km:"Khmer",ko:"Korean",ku:"Kurdish",ky:"Kyrgyz",
-  lo:"Lao",la:"Latin",lv:"Latvian",lt:"Lithuanian",lb:"Luxembourgish",
-  mk:"Macedonian",mg:"Malagasy",ms:"Malay",ml:"Malayalam",mt:"Maltese",
-  mi:"Maori",mr:"Marathi",mn:"Mongolian",my:"Myanmar",ne:"Nepali",
-  no:"Norwegian",ny:"Nyanja",or:"Odia",ps:"Pashto",fa:"Persian",
-  pl:"Polish",pt:"Portuguese",pa:"Punjabi",ro:"Romanian",ru:"Russian",
-  sm:"Samoan",gd:"Scots Gaelic",sr:"Serbian",st:"Sesotho",sn:"Shona",
-  sd:"Sindhi",si:"Sinhala",sk:"Slovak",sl:"Slovenian",so:"Somali",
-  es:"Spanish",su:"Sundanese",sw:"Swahili",sv:"Swedish",tl:"Tagalog",
-  tg:"Tajik",ta:"Tamil",tt:"Tatar",te:"Telugu",th:"Thai",tr:"Turkish",
-  tk:"Turkmen",uk:"Ukrainian",ur:"Urdu",ug:"Uyghur",uz:"Uzbek",
+  ht:"Haitian Creole",ha:"Hausa",haw:"Hawaiian",hi:"Hindi",hmn:"Hmong",
+  hu:"Hungarian",is:"Icelandic",ig:"Igbo",id:"Indonesian",ga:"Irish",
+  it:"Italian",ja:"Japanese",jw:"Javanese",kn:"Kannada",kk:"Kazakh",
+  km:"Khmer",ko:"Korean",ku:"Kurdish",ky:"Kyrgyz",lo:"Lao",la:"Latin",
+  lv:"Latvian",lt:"Lithuanian",lb:"Luxembourgish",mk:"Macedonian",mg:"Malagasy",
+  ms:"Malay",ml:"Malayalam",mt:"Maltese",mi:"Maori",mr:"Marathi",mn:"Mongolian",
+  my:"Myanmar",ne:"Nepali",no:"Norwegian",ny:"Nyanja",or:"Odia",ps:"Pashto",
+  fa:"Persian",pl:"Polish",pt:"Portuguese",pa:"Punjabi",ro:"Romanian",ru:"Russian",
+  sm:"Samoan",gd:"Scots Gaelic",sr:"Serbian",st:"Sesotho",sn:"Shona",sd:"Sindhi",
+  si:"Sinhala",sk:"Slovak",sl:"Slovenian",so:"Somali",es:"Spanish",su:"Sundanese",
+  sw:"Swahili",sv:"Swedish",tl:"Tagalog",tg:"Tajik",ta:"Tamil",tt:"Tatar",te:"Telugu",
+  th:"Thai",tr:"Turkish",tk:"Turkmen",uk:"Ukrainian",ur:"Urdu",ug:"Uyghur",uz:"Uzbek",
   vi:"Vietnamese",cy:"Welsh",xh:"Xhosa",yi:"Yiddish",yo:"Yoruba",zu:"Zulu"
 };
 
-for (const k in languages) {
-  const o = document.createElement("option");
-  o.value = k;
-  o.textContent = languages[k];
-  languageSelect.appendChild(o);
+for (const key in languages) {
+  const opt = document.createElement("option");
+  opt.value = key;
+  opt.textContent = languages[key];
+  languageSelect.appendChild(opt);
 }
 
-/* ====== TRANSLATE ====== */
 async function translate(text) {
-  if (lang === "original") return text;
-  const key = text + lang;
-  if (cache[key]) return cache[key];
-  const r = await fetch(
+  if (!text || lang === "original") return text;
+  const key = `${lang}:${text}`;
+  if (translationCache[key]) return translationCache[key];
+  if (translationInFlight[key]) return translationInFlight[key];
+
+  translationInFlight[key] = fetch(
     `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`
-  );
-  const d = await r.json();
-  cache[key] = d[0][0][0];
-  return cache[key];
+  )
+    .then(response => response.json())
+    .then(data => data?.[0]?.map(part => part[0]).join("") || text)
+    .catch(() => text)
+    .then(result => {
+      translationCache[key] = result;
+      delete translationInFlight[key];
+      return result;
+    });
+
+  return translationInFlight[key];
 }
 
-/* ====== LOAD PLAYLIST ====== */
-fetch(playlistURL).then(r=>r.text()).then(t=>{
-  const lines = t.split(/\r?\n/);
-  let c = {};
-  lines.forEach(l=>{
-    if (l.startsWith("#EXTINF")) {
-      c = {};
-      c.name = l.split(",").pop();
-      const logo = l.match(/tvg-logo="([^"]+)"/);
-      c.logo = logo ? logo[1] : "";
-    } else if (l && !l.startsWith("#")) {
-      c.url = l;
-      channels.push(c);
+function parsePlaylist(text) {
+  const lines = text.split(/\r?\n/);
+  const parsed = [];
+  let current = null;
+
+  for (const lineRaw of lines) {
+    const line = lineRaw.trim();
+    if (!line) continue;
+
+    if (line.startsWith("#EXTINF")) {
+      const name = line.split(",").pop()?.trim() || "Unnamed";
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+      current = { name, logo: logoMatch ? logoMatch[1] : "", url: "" };
+      continue;
     }
-  });
-  filtered = channels;
-  render();
-});
 
-/* ====== RENDER ====== */
-async function render() {
-  channelList.innerHTML = "";
-  for (const ch of filtered) {
-    const li = document.createElement("li");
-    li.tabIndex = 0;
+    if (line.startsWith("#")) continue;
 
-    const img = document.createElement("img");
-    img.src = ch.logo || "https://via.placeholder.com/48?text=TV";
-    img.className = "logo";
+    if (!current) {
+      current = { name: line, logo: "", url: line };
+    } else {
+      current.url = line;
+    }
 
-    const name = document.createElement("span");
-    name.textContent = await translate(ch.name);
+    parsed.push(current);
+    current = null;
+  }
 
-    li.append(img, name);
+  return parsed;
+}
 
-    li.onclick = async ()=>{
-      player.src = ch.url;
-      player.play();
-      caption.textContent = await translate(ch.name);
-      menu.classList.remove("open");
-    };
+function playChannel(channel) {
+  const url = (channel.url || "").trim();
+  if (!url) return;
 
-    channelList.appendChild(li);
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
+
+  if (url.includes(".m3u8")) {
+    if (Hls.isSupported()) {
+      hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(player);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+        player.play().catch(() => {});
+      });
+      hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+        if (data?.fatal && hlsInstance) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            hlsInstance.startLoad();
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hlsInstance.recoverMediaError();
+          } else {
+            hlsInstance.destroy();
+            hlsInstance = null;
+          }
+        }
+      });
+    } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
+      player.src = url;
+      player.play().catch(() => {});
+    }
+  } else {
+    player.src = url;
+    player.play().catch(() => {});
   }
 }
 
-/* ====== SEARCH ====== */
-searchInput.oninput = ()=>{
-  const q = searchInput.value.toLowerCase();
-  filtered = channels.filter(c=>c.name.toLowerCase().includes(q));
-  render();
-};
+async function renderNextBatch() {
+  if (isRenderingBatch) return;
 
-languageSelect.onchange = ()=>{
-  lang = languageSelect.value;
-  render();
-};
+  const nextItems = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
+  if (!nextItems.length) {
+    loadingHint.textContent = renderedCount ? "No more channels" : "No channels found";
+    return;
+  }
 
-/* ====== REMOTE CONTROLS ====== */
-document.addEventListener("keydown", e=>{
-  if (e.key === "ArrowRight") menu.classList.add("open");
-  if (e.key === "ArrowLeft") menu.classList.remove("open");
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    const nameNodes = [];
+
+    nextItems.forEach((ch) => {
+      const li = document.createElement("li");
+      li.tabIndex = 0;
+
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
+      img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = ch.name;
+      nameNodes.push({ node: name, rawName: ch.name });
+
+      li.append(img, name);
+
+      li.addEventListener("click", async () => {
+        playChannel(ch);
+        caption.textContent = await translate(ch.name);
+        sidebar.classList.remove("open");
+      });
+
+      channelList.appendChild(li);
+    });
+
+    Promise.all(nameNodes.map(item => translate(item.rawName))).then(translated => {
+      translated.forEach((label, idx) => {
+        nameNodes[idx].node.textContent = label || nameNodes[idx].rawName;
+      });
+    });
+
+    loadingHint.textContent = renderedCount < filtered.length
+      ? `Loaded ${renderedCount} / ${filtered.length} channels`
+      : "No more channels";
+  } finally {
+    isRenderingBatch = false;
+  }
+}
+
+function resetAndRender() {
+  renderedCount = 0;
+  isRenderingBatch = false;
+  channelList.innerHTML = "";
+  loadingHint.textContent = "Loading...";
+  renderNextBatch();
+}
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.toLowerCase().trim();
+  filtered = channels.filter(ch => ch.name.toLowerCase().includes(q));
+  resetAndRender();
 });
+
+languageSelect.addEventListener("change", () => {
+  lang = languageSelect.value;
+  resetAndRender();
+});
+
+channelList.addEventListener("scroll", () => {
+  const nearBottom = channelList.scrollTop + channelList.clientHeight >= channelList.scrollHeight - 120;
+  if (nearBottom) {
+    renderNextBatch();
+  }
+});
+
+sidebarToggle.addEventListener("click", () => {
+  sidebar.classList.toggle("open");
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") sidebar.classList.add("open");
+  if (e.key === "ArrowLeft") sidebar.classList.remove("open");
+});
+
+window.addEventListener("pagehide", () => {
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
+});
+
+fetch(playlistURL)
+  .then(r => r.text())
+  .then(text => {
+    channels = parsePlaylist(text);
+    filtered = channels;
+    resetAndRender();
+  })
+  .catch(() => {
+    loadingHint.textContent = "Failed to load playlist.m3u";
+  });
 </script>
 
 </body>
