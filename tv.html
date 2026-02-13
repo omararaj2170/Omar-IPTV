@@ -258,31 +258,14 @@ function parsePlaylist(text) {
   return parsed;
 }
 
-async function renderNextBatch() {
-  if (isRenderingBatch) return;
+function playChannel(channel) {
+  const url = (channel.url || "").trim();
+  if (!url) return;
 
-  const nextItems = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
-  if (!nextItems.length) {
-    loadingHint.textContent = renderedCount ? "No more channels" : "No channels found";
-    return;
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
   }
-
-  isRenderingBatch = true;
-  renderedCount += nextItems.length;
-
-  try {
-    for (const ch of nextItems) {
-    const li = document.createElement("li");
-    li.tabIndex = 0;
-
-    const img = document.createElement("img");
-    img.className = "logo";
-    img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
-    img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
-
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = await translate(ch.name);
 
   if (url.includes(".m3u8")) {
     if (Hls.isSupported()) {
@@ -292,7 +275,19 @@ async function renderNextBatch() {
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         player.play().catch(() => {});
       });
-    } else {
+      hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+        if (data?.fatal && hlsInstance) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            hlsInstance.startLoad();
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hlsInstance.recoverMediaError();
+          } else {
+            hlsInstance.destroy();
+            hlsInstance = null;
+          }
+        }
+      });
+    } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
       player.src = url;
       player.play().catch(() => {});
     }
@@ -300,6 +295,55 @@ async function renderNextBatch() {
     player.src = url;
     player.play().catch(() => {});
   }
+
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    const nameNodes = [];
+
+    nextItems.forEach((ch) => {
+      const li = document.createElement("li");
+      li.tabIndex = 0;
+
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
+      img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = ch.name;
+      nameNodes.push({ node: name, rawName: ch.name });
+
+      li.append(img, name);
+
+      li.addEventListener("click", async () => {
+        playChannel(ch);
+        caption.textContent = await translate(ch.name);
+        sidebar.classList.remove("open");
+      });
+
+      channelList.appendChild(li);
+    });
+
+    Promise.all(nameNodes.map(item => translate(item.rawName))).then(translated => {
+      translated.forEach((label, idx) => {
+        nameNodes[idx].node.textContent = label || nameNodes[idx].rawName;
+      });
+    });
+
+    loadingHint.textContent = renderedCount < filtered.length
+      ? `Loaded ${renderedCount} / ${filtered.length} channels`
+      : "No more channels";
+  } finally {
+    isRenderingBatch = false;
+  }
+
+  renderedCount += nextItems.length;
+  loadingHint.textContent = renderedCount < filtered.length
+    ? `Loaded ${renderedCount} / ${filtered.length} channels`
+    : "No more channels";
 }
 
 async function renderNextBatch() {
@@ -354,11 +398,6 @@ async function renderNextBatch() {
   } finally {
     isRenderingBatch = false;
   }
-
-  renderedCount += nextItems.length;
-  loadingHint.textContent = renderedCount < filtered.length
-    ? `Loaded ${renderedCount} / ${filtered.length} channels`
-    : "No more channels";
 }
 
 function resetAndRender() {
@@ -394,6 +433,13 @@ sidebarToggle.addEventListener("click", () => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") sidebar.classList.add("open");
   if (e.key === "ArrowLeft") sidebar.classList.remove("open");
+});
+
+window.addEventListener("pagehide", () => {
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
 });
 
 fetch(playlistURL)
