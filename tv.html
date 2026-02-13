@@ -258,14 +258,31 @@ function parsePlaylist(text) {
   return parsed;
 }
 
-function playChannel(channel) {
-  const url = (channel.url || "").trim();
-  if (!url) return;
+async function renderNextBatch() {
+  if (isRenderingBatch) return;
 
-  if (hlsInstance) {
-    hlsInstance.destroy();
-    hlsInstance = null;
+  const nextItems = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
+  if (!nextItems.length) {
+    loadingHint.textContent = renderedCount ? "No more channels" : "No channels found";
+    return;
   }
+
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    for (const ch of nextItems) {
+    const li = document.createElement("li");
+    li.tabIndex = 0;
+
+    const img = document.createElement("img");
+    img.className = "logo";
+    img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
+    img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = await translate(ch.name);
 
   if (url.includes(".m3u8")) {
     if (Hls.isSupported()) {
@@ -337,6 +354,11 @@ async function renderNextBatch() {
   } finally {
     isRenderingBatch = false;
   }
+
+  renderedCount += nextItems.length;
+  loadingHint.textContent = renderedCount < filtered.length
+    ? `Loaded ${renderedCount} / ${filtered.length} channels`
+    : "No more channels";
 }
 
 function resetAndRender() {
