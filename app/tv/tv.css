@@ -127,3 +127,44 @@ html, body {
   font-size: 13px;
   padding: 12px;
 }
+
+#userGreeting {
+  font-size: 13px;
+  color: #bfefff;
+}
+
+#userGreeting a {
+  color: #00ccff;
+  text-decoration: none;
+}
+
+#lastWatchedContainer {
+  min-height: 36px;
+}
+
+.last-watched-card {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: #222;
+  cursor: pointer;
+}
+
+.last-watched-card img {
+  width: 44px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #000;
+}
+
+.last-watched-name {
+  font-size: 12px;
+}
+
+.last-watched-empty {
+  color: #aaa;
+  font-size: 12px;
+}

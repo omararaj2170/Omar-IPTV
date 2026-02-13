@@ -7,6 +7,8 @@ const searchInput = document.getElementById("search");
 const languageSelect = document.getElementById("language");
 const channelList = document.getElementById("channelList");
 const loadingHint = document.getElementById("loadingHint");
+const userGreeting = document.getElementById("userGreeting");
+const lastWatchedContainer = document.getElementById("lastWatchedContainer");
 
 const BATCH_SIZE = 25;
 let channels = [];
@@ -15,8 +17,71 @@ let renderedCount = 0;
 let lang = "original";
 let isRenderingBatch = false;
 let hlsInstance = null;
+let lastPlayRequestAt = 0;
+let delayedPlayTimer = null;
+let pendingChannel = null;
 const translationCache = {};
 const translationInFlight = {};
+
+const CHANNEL_SWITCH_COOLDOWN_MS = 900;
+const HLS_CONFIG = {
+  enableWorker: true,
+  lowLatencyMode: false,
+  backBufferLength: 30,
+  maxBufferLength: 20,
+  maxMaxBufferLength: 30,
+  maxBufferSize: 30 * 1000 * 1000,
+  liveSyncDurationCount: 4,
+  liveMaxLatencyDurationCount: 8,
+  capLevelToPlayerSize: true
+};
+
+function getCurrentUsername() {
+  return (localStorage.getItem("iptvUsername") || "").trim();
+}
+
+function getLastWatchedMap() {
+  return JSON.parse(localStorage.getItem("iptvLastWatchedByUser") || "{}");
+}
+
+function setLastWatched(ch) {
+  const username = getCurrentUsername();
+  if (!username || !ch?.url) return;
+  const map = getLastWatchedMap();
+  map[username] = { name: ch.name || "Unknown", logo: ch.logo || "", url: ch.url };
+  localStorage.setItem("iptvLastWatchedByUser", JSON.stringify(map));
+}
+
+function getLastWatched() {
+  const username = getCurrentUsername();
+  if (!username) return null;
+  return getLastWatchedMap()[username] || null;
+}
+
+function renderGreeting() {
+  const username = getCurrentUsername();
+  if (username) userGreeting.textContent = `Hello! ${username}`;
+  else userGreeting.innerHTML = 'Hello! <a href="../login/login.html">Sign Up / Log In</a>';
+}
+
+function renderLastWatched() {
+  const last = getLastWatched();
+  if (!last) {
+    lastWatchedContainer.innerHTML = `<div class="last-watched-empty">No recent channel yet</div>`;
+    return;
+  }
+
+  lastWatchedContainer.innerHTML = `
+    <div class="last-watched-card">
+      <img src="${last.logo || 'https://via.placeholder.com/120x80?text=TV'}" onerror="this.src='https://via.placeholder.com/120x80?text=TV'">
+      <div class="last-watched-name">${last.name}</div>
+    </div>
+  `;
+
+  const nameNode = lastWatchedContainer.querySelector(".last-watched-name");
+  translate(last.name).then(t => nameNode.textContent = t);
+  lastWatchedContainer.querySelector(".last-watched-card").onclick = () => playChannel(last);
+}
 
 const languages = {
   original:"🌐 Original",
@@ -101,6 +166,22 @@ function parsePlaylist(text) {
 }
 
 function playChannel(channel) {
+  const now = Date.now();
+  const sinceLast = now - lastPlayRequestAt;
+  if (sinceLast < CHANNEL_SWITCH_COOLDOWN_MS) {
+    pendingChannel = channel;
+    if (delayedPlayTimer) clearTimeout(delayedPlayTimer);
+    delayedPlayTimer = setTimeout(() => {
+      if (pendingChannel) {
+        const queued = pendingChannel;
+        pendingChannel = null;
+        playChannel(queued);
+      }
+    }, CHANNEL_SWITCH_COOLDOWN_MS - sinceLast);
+    return;
+  }
+  lastPlayRequestAt = now;
+
   const url = (channel.url || "").trim();
   if (!url) return;
 
@@ -111,7 +192,7 @@ function playChannel(channel) {
 
   if (url.includes(".m3u8")) {
     if (Hls.isSupported()) {
-      hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hlsInstance = new Hls(HLS_CONFIG);
       hlsInstance.loadSource(url);
       hlsInstance.attachMedia(player);
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -172,6 +253,8 @@ async function renderNextBatch() {
 
       li.addEventListener("click", async () => {
         playChannel(ch);
+        setLastWatched(ch);
+        renderLastWatched();
         caption.textContent = await translate(ch.name);
         sidebar.classList.remove("open");
       });
@@ -210,6 +293,7 @@ searchInput.addEventListener("input", () => {
 languageSelect.addEventListener("change", () => {
   lang = languageSelect.value;
   resetAndRender();
+  renderLastWatched();
 });
 
 channelList.addEventListener("scroll", () => {
@@ -229,11 +313,18 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("pagehide", () => {
+  if (delayedPlayTimer) {
+    clearTimeout(delayedPlayTimer);
+    delayedPlayTimer = null;
+  }
   if (hlsInstance) {
     hlsInstance.destroy();
     hlsInstance = null;
   }
 });
+
+renderGreeting();
+renderLastWatched();
 
 fetch(playlistURL)
   .then(r => r.text())

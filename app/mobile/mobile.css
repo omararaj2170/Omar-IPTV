@@ -28,6 +28,46 @@ h1{
   text-align:center;
 }
 
+
+#userGreeting{
+  width:100%;
+  color:#bfefff;
+  font-size:13px;
+  margin-top:8px;
+}
+
+#userGreeting a{
+  color:#00ccff;
+  text-decoration:none;
+}
+
+.last-watched-card{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding:8px;
+  border-radius:8px;
+  background:#222;
+  cursor:pointer;
+}
+
+.last-watched-card img{
+  width:50px;
+  height:36px;
+  object-fit:contain;
+  background:#000;
+  border-radius:4px;
+}
+
+.last-watched-name{
+  font-size:12px;
+}
+
+.last-watched-empty{
+  color:#aaa;
+  font-size:12px;
+}
+
 #translatorBar{
   margin-top:10px;
   width:100%;

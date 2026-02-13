@@ -10,6 +10,17 @@ const phoneInput = document.getElementById("phone");
 const passwordInput = document.getElementById("password");
 const confirmPasswordInput = document.getElementById("confirmPassword");
 
+function getUsers(){
+  const primary = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
+  const backup = JSON.parse(localStorage.getItem("iptvUsersBackup") || "{}");
+  return Object.keys(primary).length ? primary : backup;
+}
+
+function saveUsers(users){
+  localStorage.setItem("iptvUsers", JSON.stringify(users));
+  localStorage.setItem("iptvUsersBackup", JSON.stringify(users));
+}
+
 function updateFormMode(){
   if(isSignUp){
     submitBtn.textContent = "Sign Up";
@@ -42,7 +53,7 @@ authForm.addEventListener("submit", e=>{
   const confirmPassword = confirmPasswordInput.value.trim();
   status.textContent = "";
 
-  const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
+  const users = getUsers();
 
   if(isSignUp){
     if(!username || !password || !confirmPassword) return status.textContent = "Please fill required fields";
@@ -50,8 +61,8 @@ authForm.addEventListener("submit", e=>{
     if(users[username]) return status.textContent = "Username already exists";
 
     users[username] = {email, phone, password};
-    localStorage.setItem("iptvUsers", JSON.stringify(users));
-    localStorage.setItem("iptvUsername", username); // auto-login
+    saveUsers(users);
+    localStorage.setItem("iptvUsername", username);
     status.textContent = "Sign Up successful! Redirecting...";
     window.location.href = "../index/index.html";
   } else {

@@ -26,6 +26,45 @@ h1{
   font-size:20px;
 }
 
+
+#userGreeting{
+  margin-left:14px;
+  color:#bfefff;
+  font-size:14px;
+}
+
+#userGreeting a{
+  color:#00ccff;
+  text-decoration:none;
+}
+
+.last-watched-card{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px;
+  border-radius:8px;
+  background:#222;
+  cursor:pointer;
+}
+
+.last-watched-card img{
+  width:56px;
+  height:40px;
+  object-fit:contain;
+  background:#000;
+  border-radius:4px;
+}
+
+.last-watched-name{
+  font-size:13px;
+}
+
+.last-watched-empty{
+  color:#aaa;
+  font-size:13px;
+}
+
 #translatorBar{
   margin-left:auto;
   background:#1f1f1f;
@@ -181,5 +220,8 @@ footer{
     height:100px;
   }
   header{flex-direction:column; align-items:flex-start;}
+  
+
+#userGreeting{margin-left:0; margin-top:8px;}
   #translatorBar{margin-left:0; margin-top:10px;}
 }
