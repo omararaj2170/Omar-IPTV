@@ -293,6 +293,11 @@ async function renderNextBatch() {
   } finally {
     isRenderingBatch = false;
   }
+
+  renderedCount += nextItems.length;
+  loadingHint.textContent = renderedCount < filtered.length
+    ? `Loaded ${renderedCount} / ${filtered.length} channels`
+    : "No more channels";
 }
 
 function resetAndRender() {
