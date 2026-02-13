@@ -213,6 +213,102 @@ async function translateText(text) {
   if (!text || selectedLanguage === "en") return text;
   const key = `${selectedLanguage}:${text}`;
   if (translationCache[key]) return translationCache[key];
+  currentIndex+=batchSize;
+  if(currentIndex>=visibleChannels.length){
+    loadMoreBtn.style.display="none";
+  }
+  renderStaticText();
+}
+
+loadMoreBtn.onclick=loadNextBatch;
+
+function playStream(url){
+  if(url.endsWith(".m3u8") && Hls.isSupported()){
+    const hls=new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(player);
+  }else{
+    player.src=url;
+  }
+  player.play();
+}
+
+function toggleFavorite(ch){
+  const exists=favorites.find(c=>c.url===ch.url);
+  if(exists){
+    favorites=favorites.filter(c=>c.url!==ch.url);
+  }else{
+    favorites.push(ch);
+  }
+  localStorage.setItem("favorites",JSON.stringify(favorites));
+  renderFavorites();
+}
+
+function renderFavorites(){
+  favoritesList.innerHTML="";
+  favorites.forEach(c=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span>${c.name}</span>`;
+    const favNameNode=li.querySelector("span");
+    translateText(c.name).then(translated=>{
+      favNameNode.textContent=translated;
+    });
+    li.onclick=()=>renderChannels([c]);
+    favoritesList.appendChild(li);
+  });
+  renderStaticText();
+}
+
+fetch(playlistURL)
+.then(r=>r.text())
+.then(text=>{
+  const lines=text.split(/\r?\n/);
+  let current={};
+
+  lines.forEach(line=>{
+    if(line.startsWith("#EXTINF")){
+      current.name=line.match(/,(.*)$/)?.[1]||"Unnamed";
+      current.category=line.match(/group-title="([^"]+)"/)?.[1]||"Other";
+      current.logo=line.match(/tvg-logo="([^"]+)"/)?.[1]||"";
+    } else if(line && !line.startsWith("#")){
+      current.url=line.trim();
+      channels.push(current);
+      if(!categories[current.category]) categories[current.category]=[];
+      categories[current.category].push(current);
+      current={};
+    }
+  });
+
+  renderChannels(channels);
+  renderCategories();
+});
+
+function renderCategories(){
+  categoriesList.innerHTML="";
+  Object.keys(categories).forEach(cat=>{
+    const li=document.createElement("li");
+    li.innerHTML = `<span>${cat}</span>`;
+    const categoryNode=li.querySelector("span");
+    translateText(cat).then(translated=>{
+      categoryNode.textContent=translated;
+    });
+    li.onclick=()=>renderChannels(categories[cat]);
+    categoriesList.appendChild(li);
+  });
+  renderStaticText();
+}
+
+searchInput.addEventListener("input",()=>{
+  const q=searchInput.value.toLowerCase();
+  renderChannels(channels.filter(c=>c.name.toLowerCase().includes(q)));
+});
+
+renderFavorites();
+
+async function translateText(text){
+  if(!text || selectedLanguage === "en") return text;
+  const key = `${selectedLanguage}:${text}`;
+  if(translationCache[key]) return translationCache[key];
   try {
     const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${selectedLanguage}&dt=t&q=${encodeURIComponent(text)}`);
     const data = await response.json();
