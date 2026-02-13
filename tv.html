@@ -6,6 +6,8 @@
 <link rel="icon" href="./favicon.ico" type="image/x-icon">
 <title>Omar's IPTV – TV</title>
 
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
 <style>
 html, body {
   margin: 0;
@@ -170,7 +172,9 @@ let filtered = [];
 let renderedCount = 0;
 let lang = "original";
 let isRenderingBatch = false;
+let hlsInstance = null;
 const translationCache = {};
+const translationInFlight = {};
 
 const languages = {
   original:"🌐 Original",
@@ -206,16 +210,21 @@ async function translate(text) {
   if (!text || lang === "original") return text;
   const key = `${lang}:${text}`;
   if (translationCache[key]) return translationCache[key];
-  try {
-    const response = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`
-    );
-    const data = await response.json();
-    translationCache[key] = data?.[0]?.map(part => part[0]).join("") || text;
-    return translationCache[key];
-  } catch {
-    return text;
-  }
+  if (translationInFlight[key]) return translationInFlight[key];
+
+  translationInFlight[key] = fetch(
+    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`
+  )
+    .then(response => response.json())
+    .then(data => data?.[0]?.map(part => part[0]).join("") || text)
+    .catch(() => text)
+    .then(result => {
+      translationCache[key] = result;
+      delete translationInFlight[key];
+      return result;
+    });
+
+  return translationInFlight[key];
 }
 
 function parsePlaylist(text) {
@@ -275,17 +284,69 @@ async function renderNextBatch() {
     name.className = "name";
     name.textContent = await translate(ch.name);
 
-    li.append(img, name);
+  if (url.includes(".m3u8")) {
+    if (Hls.isSupported()) {
+      hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(player);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+        player.play().catch(() => {});
+      });
+    } else {
+      player.src = url;
+      player.play().catch(() => {});
+    }
+  } else {
+    player.src = url;
+    player.play().catch(() => {});
+  }
+}
 
-    li.addEventListener("click", async () => {
-      player.src = ch.url;
-      await player.play().catch(() => {});
-      caption.textContent = await translate(ch.name);
-      sidebar.classList.remove("open");
+async function renderNextBatch() {
+  if (isRenderingBatch) return;
+
+  const nextItems = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
+  if (!nextItems.length) {
+    loadingHint.textContent = renderedCount ? "No more channels" : "No channels found";
+    return;
+  }
+
+  isRenderingBatch = true;
+  renderedCount += nextItems.length;
+
+  try {
+    const nameNodes = [];
+
+    nextItems.forEach((ch) => {
+      const li = document.createElement("li");
+      li.tabIndex = 0;
+
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = ch.logo || "https://via.placeholder.com/56?text=TV";
+      img.onerror = () => { img.src = "https://via.placeholder.com/56?text=TV"; };
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = ch.name;
+      nameNodes.push({ node: name, rawName: ch.name });
+
+      li.append(img, name);
+
+      li.addEventListener("click", async () => {
+        playChannel(ch);
+        caption.textContent = await translate(ch.name);
+        sidebar.classList.remove("open");
+      });
+
+      channelList.appendChild(li);
     });
 
-    channelList.appendChild(li);
-    }
+    Promise.all(nameNodes.map(item => translate(item.rawName))).then(translated => {
+      translated.forEach((label, idx) => {
+        nameNodes[idx].node.textContent = label || nameNodes[idx].rawName;
+      });
+    });
 
     loadingHint.textContent = renderedCount < filtered.length
       ? `Loaded ${renderedCount} / ${filtered.length} channels`
