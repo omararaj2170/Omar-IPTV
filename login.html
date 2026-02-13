@@ -1,93 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login / Sign Up</title>
-<style>
-  body { font-family: Arial,sans-serif; background:#121212; color:#eee; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
-  h1 { color:#00ccff; }
-  form { display:flex; flex-direction:column; gap:10px; background:#1e1e1e; padding:20px; border-radius:6px; }
-  input { padding:10px; border-radius:6px; border:none; font-size:16px; }
-  button { padding:10px; border-radius:6px; border:none; background:#00ccff; color:#000; font-size:16px; cursor:pointer; }
-  .toggle { color:#00ccff; cursor:pointer; text-align:center; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>Redirecting…</title>
+  <meta http-equiv="refresh" content="0; url=app/login/login.html">
+  <script>location.replace("app/login/login.html");</script>
 </head>
-<body>
-
-<h1>Login / Sign Up</h1>
-
-<form id="authForm">
-  <input type="text" id="username" placeholder="Username" required>
-  <input type="email" id="email" placeholder="Email">
-  <input type="tel" id="phone" placeholder="Phone number">
-  <input type="password" id="password" placeholder="Password" required>
-  <input type="password" id="confirmPassword" placeholder="Confirm Password">
-  <button type="submit" id="submitBtn">Sign Up</button>
-</form>
-
-<div class="toggle" id="toggleMode">Already have an account? Sign In</div>
-
-<script>
-let isSignUp = true;
-
-const authForm = document.getElementById("authForm");
-const toggleMode = document.getElementById("toggleMode");
-const submitBtn = document.getElementById("submitBtn");
-
-function updateFormMode(){
-  if(isSignUp){
-    submitBtn.textContent = "Sign Up";
-    toggleMode.textContent = "Already have an account? Sign In";
-    authForm.email.style.display = "block";
-    authForm.phone.style.display = "block";
-    authForm.confirmPassword.style.display = "block";
-  } else {
-    submitBtn.textContent = "Sign In";
-    toggleMode.textContent = "Don't have an account? Sign Up";
-    authForm.email.style.display = "none";
-    authForm.phone.style.display = "none";
-    authForm.confirmPassword.style.display = "none";
-  }
-}
-
-toggleMode.addEventListener("click",()=>{
-  isSignUp = !isSignUp;
-  updateFormMode();
-});
-
-updateFormMode();
-
-authForm.addEventListener("submit", e=>{
-  e.preventDefault();
-  const username = authForm.username.value.trim();
-  const email = authForm.email.value.trim();
-  const phone = authForm.phone.value.trim();
-  const password = authForm.password.value.trim();
-  const confirmPassword = authForm.confirmPassword.value.trim();
-
-  const users = JSON.parse(localStorage.getItem("iptvUsers") || "{}");
-
-  if(isSignUp){
-    if(!username || !password || !confirmPassword) return alert("Please fill required fields");
-    if(password !== confirmPassword) return alert("Passwords do not match");
-    if(users[username]) return alert("Username already exists");
-
-    users[username] = {email, phone, password};
-    localStorage.setItem("iptvUsers", JSON.stringify(users));
-    localStorage.setItem("iptvUsername", username); // auto-login
-    alert("Sign Up successful!");
-    window.location.href = "index.html";
-  } else {
-    if(!username || !password) return alert("Please fill required fields");
-    if(!users[username] || users[username].password !== password) return alert("Invalid username or password");
-
-    localStorage.setItem("iptvUsername", username);
-    alert("Sign In successful!");
-    window.location.href = "index.html";
-  }
-});
-</script>
-
-</body>
+<body></body>
 </html>
