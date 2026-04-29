@@ -164,6 +164,11 @@ function renderLastWatched() {
 fetch(playlistURL)
   .then(r => r.text())
   .then(text => {
+    const isPlayableUrl = (url) => {
+      const stream = (url || "").trim();
+      if (!stream || stream === "0.0.0.0") return false;
+      return /^(https?:\/\/|rtmp:\/\/|rtsp:\/\/|udp:\/\/)/i.test(stream);
+    };
     const lines = text.split(/\r?\n/);
     let current = {};
 
@@ -173,7 +178,12 @@ fetch(playlistURL)
         current.category = line.match(/group-title="([^"]+)"/)?.[1] || "Other";
         current.logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "";
       } else if (line && !line.startsWith("#")) {
-        current.url = line.trim();
+        const stream = line.trim();
+        if (!isPlayableUrl(stream)) {
+          current = {};
+          return;
+        }
+        current.url = stream;
         channels.push(current);
         if (!categories[current.category]) categories[current.category] = [];
         categories[current.category].push(current);

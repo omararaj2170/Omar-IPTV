@@ -135,6 +135,11 @@ async function translate(text) {
 }
 
 function parsePlaylist(text) {
+  const isPlayableUrl = (url) => {
+    const stream = (url || "").trim();
+    if (!stream || stream === "0.0.0.0") return false;
+    return /^(https?:\/\/|rtmp:\/\/|rtsp:\/\/|udp:\/\/)/i.test(stream);
+  };
   const lines = text.split(/\r?\n/);
   const parsed = [];
   let current = null;
@@ -151,6 +156,11 @@ function parsePlaylist(text) {
     }
 
     if (line.startsWith("#")) continue;
+
+    if (!isPlayableUrl(line)) {
+      current = null;
+      continue;
+    }
 
     if (!current) {
       current = { name: line, logo: "", url: line };

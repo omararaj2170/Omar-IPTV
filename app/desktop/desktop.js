@@ -25,13 +25,14 @@ let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 let selectedLanguage = "en";
 const translationCache = {};
 
-function getCurrentUsername() {
-  return (localStorage.getItem("iptvUsername") || "").trim();
+function isPlayableUrl(url = "") {
+  const stream = url.trim();
+  if (!stream || stream === "0.0.0.0") return false;
+  return /^(https?:\/\/|rtmp:\/\/|rtsp:\/\/|udp:\/\/)/i.test(stream);
 }
 
-function getLastWatchedMap() {
-  return JSON.parse(localStorage.getItem("iptvLastWatchedByUser") || "{}");
-}
+function getCurrentUsername() { return (localStorage.getItem("iptvUsername") || "").trim(); }
+function getLastWatchedMap() { return JSON.parse(localStorage.getItem("iptvLastWatchedByUser") || "{}"); }
 
 function setLastWatched(ch) {
   const username = getCurrentUsername();
@@ -49,17 +50,46 @@ function getLastWatched() {
 
 function renderGreeting() {
   const username = getCurrentUsername();
-  if (username) {
-    userGreeting.textContent = `Hello! ${username}`;
-  } else {
-    userGreeting.innerHTML = 'Hello! <a href="../login/login.html">Sign Up / Log In</a>';
-  }
+  userGreeting.innerHTML = username ? `Hello! ${username}` : 'Hello! <a href="../login/login.html">Sign Up / Log In</a>';
 }
 
 document.getElementById("menuBtn").onclick = () => {
   sidebar.classList.toggle("active");
   main.classList.toggle("shift");
 };
+
+function parseChannels(text) {
+  const parsed = [];
+  const nextCategories = {};
+  const lines = text.split(/\r?\n/);
+  let current = null;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith("#EXTINF")) {
+      current = {
+        name: line.match(/,(.*)$/)?.[1]?.trim() || "Unnamed",
+        category: line.match(/group-title="([^"]+)"/)?.[1] || "Other",
+        logo: line.match(/tvg-logo="([^"]+)"/)?.[1] || ""
+      };
+      continue;
+    }
+    if (line.startsWith("#") || !current) continue;
+    if (!isPlayableUrl(line)) {
+      current = null;
+      continue;
+    }
+    const channel = { ...current, url: line };
+    parsed.push(channel);
+    if (!nextCategories[channel.category]) nextCategories[channel.category] = [];
+    nextCategories[channel.category].push(channel);
+    current = null;
+  }
+
+  channels = parsed;
+  categories = nextCategories;
+}
 
 function renderChannels(list) {
   visibleChannels = list;
@@ -72,7 +102,6 @@ function renderChannels(list) {
 
 function loadNextBatch() {
   const batch = visibleChannels.slice(currentIndex, currentIndex + batchSize);
-
   batch.forEach(ch => {
     const card = document.createElement("div");
     card.className = "channelCard";
@@ -81,17 +110,11 @@ function loadNextBatch() {
       <div class="channelName">${ch.name}</div>
       <div class="favBtn">★</div>
     `;
-    const channelNameNode = card.querySelector(".channelName");
-    translateText(ch.name).then(translated => channelNameNode.textContent = translated);
-
+    translateText(ch.name).then(t => card.querySelector(".channelName").textContent = t);
     card.onclick = () => playStream(ch.url, ch);
-    card.querySelector(".favBtn").onclick = (e) => {
-      e.stopPropagation();
-      toggleFavorite(ch);
-    };
+    card.querySelector(".favBtn").onclick = (e) => { e.stopPropagation(); toggleFavorite(ch); };
     grid.appendChild(card);
   });
-
   currentIndex += batchSize;
   if (currentIndex >= visibleChannels.length) loadMoreBtn.style.display = "none";
 }
@@ -99,36 +122,21 @@ function loadNextBatch() {
 loadMoreBtn.onclick = loadNextBatch;
 
 function playStream(url, channel = null) {
+  if (!isPlayableUrl(url)) return;
   const now = Date.now();
   if (now - lastPlayRequestAt < PLAY_COOLDOWN_MS) return;
   lastPlayRequestAt = now;
-
-  if (hlsInstance) {
-    hlsInstance.destroy();
-    hlsInstance = null;
-  }
-
+  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
   if (url.endsWith(".m3u8") && Hls.isSupported()) {
     hlsInstance = new Hls(HLS_CONFIG);
     hlsInstance.loadSource(url);
     hlsInstance.attachMedia(player);
-  } else {
-    player.src = url;
-  }
-  player.play();
-
-  if (channel) {
-    setLastWatched(channel);
-    renderLastWatched();
-  }
+  } else { player.src = url; }
+  player.play().catch(() => {});
+  if (channel) { setLastWatched(channel); renderLastWatched(); }
 }
 
-window.addEventListener("pagehide", () => {
-  if (hlsInstance) {
-    hlsInstance.destroy();
-    hlsInstance = null;
-  }
-});
+window.addEventListener("pagehide", () => { if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; } });
 
 function toggleFavorite(ch) {
   const exists = favorites.find(c => c.url === ch.url);
@@ -142,8 +150,7 @@ function renderFavorites() {
   favorites.forEach(c => {
     const li = document.createElement("li");
     li.innerHTML = `<span>${c.name}</span>`;
-    const nameNode = li.querySelector("span");
-    translateText(c.name).then(translated => nameNode.textContent = translated);
+    translateText(c.name).then(t => li.querySelector("span").textContent = t);
     li.onclick = () => playStream(c.url, c);
     favoritesList.appendChild(li);
   });
@@ -151,54 +158,18 @@ function renderFavorites() {
 
 function renderLastWatched() {
   const last = getLastWatched();
-  if (!last) {
-    lastWatchedContainer.innerHTML = `<div class="last-watched-empty">No recent channel yet</div>`;
-    return;
-  }
-
-  lastWatchedContainer.innerHTML = `
-    <div class="last-watched-card">
-      <img src="${last.logo || 'https://via.placeholder.com/120x80?text=TV'}" onerror="this.src='https://via.placeholder.com/120x80?text=TV'">
-      <div class="last-watched-name">${last.name}</div>
-    </div>
-  `;
-
-  const nameNode = lastWatchedContainer.querySelector(".last-watched-name");
-  translateText(last.name).then(t => nameNode.textContent = t);
+  if (!last) return (lastWatchedContainer.innerHTML = `<div class="last-watched-empty">No recent channel yet</div>`);
+  lastWatchedContainer.innerHTML = `<div class="last-watched-card"><img src="${last.logo || 'https://via.placeholder.com/120x80?text=TV'}" onerror="this.src='https://via.placeholder.com/120x80?text=TV'"><div class="last-watched-name">${last.name}</div></div>`;
+  translateText(last.name).then(t => lastWatchedContainer.querySelector(".last-watched-name").textContent = t);
   lastWatchedContainer.querySelector(".last-watched-card").onclick = () => playStream(last.url, last);
 }
-
-fetch(playlistURL)
-  .then(r => r.text())
-  .then(text => {
-    const lines = text.split(/\r?\n/);
-    let current = {};
-
-    lines.forEach(line => {
-      if (line.startsWith("#EXTINF")) {
-        current.name = line.match(/,(.*)$/)?.[1] || "Unnamed";
-        current.category = line.match(/group-title="([^"]+)"/)?.[1] || "Other";
-        current.logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "";
-      } else if (line && !line.startsWith("#")) {
-        current.url = line.trim();
-        channels.push(current);
-        if (!categories[current.category]) categories[current.category] = [];
-        categories[current.category].push(current);
-        current = {};
-      }
-    });
-
-    renderChannels(channels);
-    renderCategories();
-  });
 
 function renderCategories() {
   categoriesList.innerHTML = "";
   Object.keys(categories).forEach(cat => {
     const li = document.createElement("li");
     li.innerHTML = `<span>${cat}</span>`;
-    const categoryNode = li.querySelector("span");
-    translateText(cat).then(translated => categoryNode.textContent = translated);
+    translateText(cat).then(t => li.querySelector("span").textContent = t);
     li.onclick = () => renderChannels(categories[cat]);
     categoriesList.appendChild(li);
   });
@@ -213,110 +184,12 @@ async function translateText(text) {
   if (!text || selectedLanguage === "en") return text;
   const key = `${selectedLanguage}:${text}`;
   if (translationCache[key]) return translationCache[key];
-  currentIndex+=batchSize;
-  if(currentIndex>=visibleChannels.length){
-    loadMoreBtn.style.display="none";
-  }
-  renderStaticText();
-}
-
-loadMoreBtn.onclick=loadNextBatch;
-
-function playStream(url){
-  if(url.endsWith(".m3u8") && Hls.isSupported()){
-    const hls=new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(player);
-  }else{
-    player.src=url;
-  }
-  player.play();
-}
-
-function toggleFavorite(ch){
-  const exists=favorites.find(c=>c.url===ch.url);
-  if(exists){
-    favorites=favorites.filter(c=>c.url!==ch.url);
-  }else{
-    favorites.push(ch);
-  }
-  localStorage.setItem("favorites",JSON.stringify(favorites));
-  renderFavorites();
-}
-
-function renderFavorites(){
-  favoritesList.innerHTML="";
-  favorites.forEach(c=>{
-    const li=document.createElement("li");
-    li.innerHTML=`<span>${c.name}</span>`;
-    const favNameNode=li.querySelector("span");
-    translateText(c.name).then(translated=>{
-      favNameNode.textContent=translated;
-    });
-    li.onclick=()=>renderChannels([c]);
-    favoritesList.appendChild(li);
-  });
-  renderStaticText();
-}
-
-fetch(playlistURL)
-.then(r=>r.text())
-.then(text=>{
-  const lines=text.split(/\r?\n/);
-  let current={};
-
-  lines.forEach(line=>{
-    if(line.startsWith("#EXTINF")){
-      current.name=line.match(/,(.*)$/)?.[1]||"Unnamed";
-      current.category=line.match(/group-title="([^"]+)"/)?.[1]||"Other";
-      current.logo=line.match(/tvg-logo="([^"]+)"/)?.[1]||"";
-    } else if(line && !line.startsWith("#")){
-      current.url=line.trim();
-      channels.push(current);
-      if(!categories[current.category]) categories[current.category]=[];
-      categories[current.category].push(current);
-      current={};
-    }
-  });
-
-  renderChannels(channels);
-  renderCategories();
-});
-
-function renderCategories(){
-  categoriesList.innerHTML="";
-  Object.keys(categories).forEach(cat=>{
-    const li=document.createElement("li");
-    li.innerHTML = `<span>${cat}</span>`;
-    const categoryNode=li.querySelector("span");
-    translateText(cat).then(translated=>{
-      categoryNode.textContent=translated;
-    });
-    li.onclick=()=>renderChannels(categories[cat]);
-    categoriesList.appendChild(li);
-  });
-  renderStaticText();
-}
-
-searchInput.addEventListener("input",()=>{
-  const q=searchInput.value.toLowerCase();
-  renderChannels(channels.filter(c=>c.name.toLowerCase().includes(q)));
-});
-
-renderFavorites();
-
-async function translateText(text){
-  if(!text || selectedLanguage === "en") return text;
-  const key = `${selectedLanguage}:${text}`;
-  if(translationCache[key]) return translationCache[key];
   try {
     const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${selectedLanguage}&dt=t&q=${encodeURIComponent(text)}`);
     const data = await response.json();
     translationCache[key] = data?.[0]?.map(row => row[0]).join("") || text;
     return translationCache[key];
-  } catch {
-    return text;
-  }
+  } catch { return text; }
 }
 
 async function renderStaticText() {
@@ -329,7 +202,7 @@ async function renderStaticText() {
   document.getElementById("footerText").textContent = await translateText("Powered by Google Translate · Hosted on GitHub Pages");
 }
 
-translatorBar.addEventListener("change", async (event) => {
+translatorBar.addEventListener("change", (event) => {
   selectedLanguage = event.target.value || "en";
   renderChannels(visibleChannels.length ? visibleChannels : channels);
   renderCategories();
@@ -338,6 +211,14 @@ translatorBar.addEventListener("change", async (event) => {
   renderGreeting();
   renderStaticText();
 });
+
+fetch(playlistURL)
+  .then(r => r.text())
+  .then(text => {
+    parseChannels(text);
+    renderChannels(channels);
+    renderCategories();
+  });
 
 renderGreeting();
 renderFavorites();
