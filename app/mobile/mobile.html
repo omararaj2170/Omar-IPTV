@@ -159,6 +159,30 @@
 <input type="text" id="search" placeholder="Search channels...">
 <div id="channelGrid"></div>
 
+
+<section id="tsDownloader">
+  <h3>M3U TS Downloader</h3>
+  <div class="ts-controls">
+    <input type="url" id="m3uInput" placeholder="Paste any M3U playlist URL...">
+    <button id="showM3uBtn" type="button">Show Link</button>
+    <button id="extractTsBtn" type="button">Extract .ts Links</button>
+  </div>
+  <div id="m3uLinkOutput" class="ts-output"></div>
+  <ul id="tsResults"></ul>
+  <div class="ai-box">
+    <input type="password" id="openaiKey" placeholder="OpenAI API key (not saved unless you export .eync)">
+    <input type="password" id="keyPassphrase" placeholder="Passphrase for .eync file">
+    <div class="key-actions">
+      <button id="saveEyncBtn" type="button">Save .eync</button>
+      <label class="file-label" for="loadEyncFile">Load .eync</label>
+      <input id="loadEyncFile" type="file" accept=".eync" hidden>
+    </div>
+    <input type="text" id="recapPrompt" placeholder="e.g. What happened around 9:15 after I joined?">
+    <button id="getRecapBtn" type="button">Get Live Recap</button>
+    <div id="recapOutput" class="ts-output"></div>
+  </div>
+</section>
+
 <div style="text-align:center;">
 <button id="loadMoreBtn">Load More</button>
 </div>
@@ -169,6 +193,7 @@
 Powered by Google Translate · Hosted on GitHub Pages
 </footer>
 
+<script src="../shared/openai-client.js"></script>
 <script src="mobile.js"></script>
 
 

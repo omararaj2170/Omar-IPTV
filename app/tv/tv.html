@@ -24,10 +24,35 @@
     <input id="search" placeholder="Search channels">
     <select id="language"></select>
   </div>
+
+  <section id="tsDownloader">
+    <h3>M3U TS Downloader</h3>
+    <div class="ts-controls">
+      <input type="url" id="m3uInput" placeholder="Paste any M3U playlist URL...">
+      <button id="showM3uBtn" type="button">Show Link</button>
+      <button id="extractTsBtn" type="button">Extract .ts Links</button>
+    </div>
+    <div id="m3uLinkOutput" class="ts-output"></div>
+    <ul id="tsResults"></ul>
+  <div class="ai-box">
+    <input type="password" id="openaiKey" placeholder="OpenAI API key (not saved unless you export .eync)">
+    <input type="password" id="keyPassphrase" placeholder="Passphrase for .eync file">
+    <div class="key-actions">
+      <button id="saveEyncBtn" type="button">Save .eync</button>
+      <label class="file-label" for="loadEyncFile">Load .eync</label>
+      <input id="loadEyncFile" type="file" accept=".eync" hidden>
+    </div>
+    <input type="text" id="recapPrompt" placeholder="e.g. What happened around 9:15 after I joined?">
+    <button id="getRecapBtn" type="button">Get Live Recap</button>
+    <div id="recapOutput" class="ts-output"></div>
+  </div>
+  </section>
+
   <ul id="channelList"></ul>
   <div id="loadingHint">Scroll to load more channels</div>
 </aside>
 
+<script src="../shared/openai-client.js"></script>
 <script src="tv.js"></script>
 
 </body>
