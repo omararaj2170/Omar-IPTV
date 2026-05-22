@@ -414,8 +414,9 @@ const showM3uBtn = document.getElementById("showM3uBtn");
 const extractTsBtn = document.getElementById("extractTsBtn");
 const m3uLinkOutput = document.getElementById("m3uLinkOutput");
 const tsResults = document.getElementById("tsResults");
+if (m3uInput) m3uInput.value = playlistURL;
 
-function normalizeUrl(raw) { return (raw || "").trim(); }
+function getM3uSourceUrl() { return playlistURL; }
 function setM3uLinkOutput(url) {
   if (!url) { m3uLinkOutput.textContent = "Paste an M3U URL first."; return; }
   m3uLinkOutput.innerHTML = `M3U link: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
@@ -440,8 +441,8 @@ async function extractTsLinksFromM3u(url) {
     m3uLinkOutput.textContent = `Unable to load M3U: ${error.message}.`;
   }
 }
-showM3uBtn.addEventListener("click",()=>setM3uLinkOutput(normalizeUrl(m3uInput.value)));
-extractTsBtn.addEventListener("click",()=>{const url=normalizeUrl(m3uInput.value);setM3uLinkOutput(url);extractTsLinksFromM3u(url);});
+showM3uBtn.addEventListener("click",()=>{const url=getM3uSourceUrl(); if (m3uInput) m3uInput.value = url; setM3uLinkOutput(url);});
+extractTsBtn.addEventListener("click",()=>{const url=getM3uSourceUrl(); if (m3uInput) m3uInput.value = url; setM3uLinkOutput(url);extractTsLinksFromM3u(url);});
 
 fetch(playlistURL)
   .then(r => r.text())

@@ -34,4 +34,3 @@ Root files (`index.html`, `Desktop.html`, `mobile.html`, `login.html`, `tv.html`
 - Key is kept in-memory unless you export/import an encrypted `.eync` file.
 
 - You can export your key to an encrypted `.eync` file (AES-GCM + passphrase). Keep this file private and out of git.
-- Bundled encrypted key file: `app/shared/bundled-key.eync` (passphrase: `omar-default-passphrase`).

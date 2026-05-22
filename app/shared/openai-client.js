@@ -1,18 +1,12 @@
 (function (global) {
   const DEFAULT_BASE_URL = "https://api.openai.com/v1";
-  const DEFAULT_MODEL = "gpt-4.1-mini";
+  const DEFAULT_MODEL = "gpt-5.4-mini";
 
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
 
   async function deriveKey(passphrase, salt) {
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw",
-      textEncoder.encode(passphrase),
-      "PBKDF2",
-      false,
-      ["deriveKey"]
-    );
+    const keyMaterial = await crypto.subtle.importKey("raw", textEncoder.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
     return crypto.subtle.deriveKey(
       { name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" },
       keyMaterial,
@@ -23,11 +17,16 @@
   }
 
   function toBase64(bytes) {
-    return btoa(String.fromCharCode(...bytes));
+    let binary = "";
+    bytes.forEach((b) => { binary += String.fromCharCode(b); });
+    return btoa(binary);
   }
 
   function fromBase64(base64) {
-    return new Uint8Array(atob(base64).split("").map((c) => c.charCodeAt(0)));
+    const binary = atob(base64);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
+    return out;
   }
 
   async function createKeyFile(openaiKey, passphrase) {
@@ -40,6 +39,7 @@
 
   async function readKeyFile(fileText, passphrase) {
     const parsed = JSON.parse(fileText);
+    if (!parsed?.salt || !parsed?.iv || !parsed?.data) throw new Error("Invalid .eync file format");
     const salt = fromBase64(parsed.salt);
     const iv = fromBase64(parsed.iv);
     const data = fromBase64(parsed.data);
@@ -52,15 +52,12 @@
     const apiKey = (opts.apiKey || "").trim();
     if (!apiKey) throw new Error("Missing OpenAI API key");
 
-    const baseUrl = (opts.baseUrl || DEFAULT_BASE_URL).trim();
+    const baseUrl = (opts.baseUrl || DEFAULT_BASE_URL).trim().replace(/\/$/, "");
     const model = (opts.model || DEFAULT_MODEL).trim();
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model,
         temperature: 0.2,
@@ -71,7 +68,17 @@
       })
     });
 
-    if (!response.ok) throw new Error(`OpenAI error HTTP ${response.status}`);
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const err = await response.json();
+        detail = err?.error?.message || JSON.stringify(err);
+      } catch (_) {
+        detail = await response.text();
+      }
+      throw new Error(`OpenAI error HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+    }
+
     const data = await response.json();
     return data?.choices?.[0]?.message?.content?.trim() || "No summary generated.";
   }
