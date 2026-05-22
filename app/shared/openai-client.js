@@ -1,6 +1,6 @@
 (function (global) {
   const DEFAULT_BASE_URL = "https://api.openai.com/v1";
-  const DEFAULT_MODEL = "gpt-4.o-mini";
+  const DEFAULT_MODEL = "gpt-4o-mini";
 
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();

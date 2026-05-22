@@ -385,7 +385,12 @@ if (getRecapBtn) {
       };
       recapOutput.textContent = await window.OmarAI.summarizeLiveSession(payload, { apiKey });
     } catch (error) {
-      recapOutput.textContent = `Recap failed: ${error.message}`;
+      const message = String(error?.message || error || "Unknown error");
+      if (message.includes("HTTP 429")) {
+        recapOutput.textContent = "OpenAI quota exceeded (HTTP 429). Add billing/credits on your OpenAI project, or use a different API key/project, then try again.";
+      } else {
+        recapOutput.textContent = `Recap failed: ${message}`;
+      }
     }
   });
 }
