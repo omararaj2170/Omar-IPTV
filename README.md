@@ -28,3 +28,10 @@ omararaj2170
 
 ## Legacy entry files
 Root files (`index.html`, `Desktop.html`, `mobile.html`, `login.html`, `tv.html`) are kept as lightweight redirects to the new `app/*/*.html` pages for compatibility.
+
+## Optional live recap AI
+- Uses OpenAI Chat Completions directly from the browser (user-provided API key).
+- Key is kept in-memory unless you export/import an encrypted `.eync` file.
+
+- You can export your key to an encrypted `.eync` file (AES-GCM + passphrase). Keep this file private and out of git.
+- Bundled encrypted key file: `app/shared/bundled-key.eync` (passphrase: `omar-default-passphrase`).

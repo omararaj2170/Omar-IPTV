@@ -1,0 +1,2 @@
+*.eync
+!app/shared/bundled-key.eync
